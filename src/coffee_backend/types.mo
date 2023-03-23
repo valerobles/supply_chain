@@ -1,7 +1,6 @@
-// import Principal "mo:base/Principal";
+import Principal "mo:base/Principal";
 
-//  type Supplier = {
-//     company: Text;
-//     userID: Principal;
-
-//   };
+ type Supplier = {
+    userName: Text;
+    userID: Text;
+  };
