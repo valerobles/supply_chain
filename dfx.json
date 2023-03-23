@@ -1,19 +1,30 @@
 {
   "canisters": {
-    "test_ii_backend": {
-      "main": "src/test_ii_backend/main.mo",
+    "internet_identity": {
+      "type": "custom",
+      "candid": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity.did",
+      "wasm": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity_dev.wasm",
+      "remote": {
+        "id": {
+          "ic": "rdmx6-jaaaa-aaaaa-aaadq-cai"
+        }
+      },
+      "frontend": {}
+    },
+    "coffee_backend": {
+      "main": "src/coffee_backend/main.mo",
       "type": "motoko"
     },
-    "test_ii_frontend": {
+    "coffee_frontend": {
       "dependencies": [
-        "test_ii_backend"
+        "coffee_backend"
       ],
       "frontend": {
-        "entrypoint": "src/test_ii_frontend/src/index.html"
+        "entrypoint": "src/coffee_frontend/src/index.html"
       },
       "source": [
-        "src/test_ii_frontend/assets",
-        "dist/test_ii_frontend/"
+        "src/coffee_frontend/assets",
+        "dist/coffee_frontend/"
       ],
       "type": "assets"
     }
