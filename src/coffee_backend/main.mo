@@ -7,66 +7,104 @@ import Hash "mo:base/Hash";
 import Iter "mo:base/Iter";
 import Text "mo:base/Text";
 import List "mo:base/List";
-import N "./node";
+
 
 actor class Main() {
+  //Learning: Cant return non-shared classes (aka mutable classes). Save mutable data to this actor instead of node?
+  var rootNodes = List.nil<T.Node>();
+  var allNodes = List.nil<T.Node>();
 
-  var starterNodes = List.nil<N.Node>();
-  var chainId : Nat = 0;
   var nodeId : Nat = 0;
-
-//Creates a new chain and returns the first node
-  public func createChain() : async (N.Node) {
-    chainId += 1;
-    nodeId += 1;
-    let newNode = N.Node(chainId, nodeId);
-    starterNodes := List.push<N.Node>(newNode, starterNodes);
-    newNode;
-  };
-
-  public func appendPreviousNode(nodeFront : N.Node, nodeBack : N.Node) : async(){
-    nodeFront.addPreviousNode(nodeBack);
-  };
-
-  public query (message) func greet() : async Text {
-
-    return "Hello, " # Principal.toText(message.caller) # "!";
-  };
-
   func natHash(n : Text) : Hash.Hash {
     Text.hash(n);
   };
   //Contains all registered suppliers
   var suppliers = Map.HashMap<Text, Text>(0, Text.equal, natHash);
+  //Creates a new chain and returns the first node.
+  public func createRootNode(title : Text) : async (Nat) {
+
+    let newNode = createNode(List.nil<T.Node>(), title);
+    rootNodes := List.push<T.Node>(newNode, rootNodes);
+    allNodes := List.push<T.Node>(newNode, allNodes);
+    nodeId;
+  };
+
+  //TODO remove previousNodes that were used from allNodes
+  public func createLeafNode(previousNodes : List.List<Nat>, title : Text, currentOwner : T.Supplier) : async (Nat) {
+    // Create a list of all Previous nodes given as a param that actually exist and point to the right owner.
+    var l = List.filter<T.Node>(
+      allNodes,
+      func n {
+        var containsN = false;
+        for (i in List.toIter<Nat>(previousNodes)) {
+          if(n.nodeId==i and n.nextOwner.userId==currentOwner.userId){
+             containsN:= true;
+          }
+        };
+        containsN;
+      },
+    );
+
+    let newNode = createNode(l, title);
+    allNodes := List.push<T.Node>(newNode, allNodes);
+    nodeId;
+  };
+  //TODO next owner gets notified to create node containing this one and maybe others
+  private func createNode(previousNodes : List.List<T.Node>, title : Text) : (T.Node) {
+    nodeId += 1;
+    {
+      nodeId = nodeId;
+      title = title;
+      // isLast = false;
+      owner = { userId = "test"; userName = "test" };
+      nextOwner = { userId = "test"; userName = "test" };
+      texts = List.nil<Text>();
+      previousNodes = previousNodes;
+    };
+  };
+ 
+  private func getNodeById(id : Nat) : (?T.Node) {
+    List.find<T.Node>(allNodes, func n { n.nodeId == id });
+  };
+  public query func showAllNodes() : async Text {
+    var output = "";
+    List.iterate<T.Node>(allNodes, func n { output := output # "\n ID:" #Nat.toText(n.nodeId) # "Title: " #n.title });
+    output;
+  };
+  public query func showChildNodes(nodeId:Nat) : async Text {
+    var output = "";
+    var node =  getNodeById(nodeId);
+    switch (node){
+    case null {output :="node not found"};
+    case (?node){
+    List.iterate<T.Node>(node.previousNodes, func n { output := output # "\n ID:" #Nat.toText(n.nodeId) # "Title: " #n.title });
+    };
+    };
+    output;
+  };
+  public query (message) func greet() : async Text {
+
+    return "Hello, " # Principal.toText(message.caller) # "!";
+  };
 
   public query func getSuppliers() : async [Text] {
     Iter.toArray(suppliers.vals());
   };
-
-  //FIXME getCaller() doesn't returns coffee_backend canister Id instead of user id
+  let backendCallerId = "rrkah-fqaaa-aaaaa-aaaaq-cai";
   // Returns the ID that was given to the Supplier
   public func addSupplier(supplier : T.Supplier) : async Text {
     // let caller = Principal.toText(message.caller);
     let caller = await getCaller();
-    if (suppliers.entries().next() == null or suppliers.get(caller) != null) {
-      suppliers.put(supplier.userID, supplier.userName);
+    //FIXME CALLER==BACKENDCALLERID MIGHT BE SECURITY RISK, MAYBE ONLY FOR TESTING
+    if (suppliers.entries().next() == null or suppliers.get(caller) != null or caller==backendCallerId) {
+      suppliers.put(supplier.userId, supplier.userName);
       return "supplier added";
     };
 
-    return "caller " #caller # " is not a supplier";
+    return "Error: Request denied. Caller " #caller # " is not a supplier";
   };
 
   public query (message) func getCaller() : async Text {
     return Principal.toText(message.caller);
   };
-
-  // public query func showSuppliers() : async Text {
-  //   var output : Text = "\n___Suppliers___";
-  //   for (supplier : T.Supplier in suppliers.vals()) {
-  //     output #= "\n" # supplier.userName;
-  //     output #= "\n" # supplier.userID;
-  //   };
-  //   output # "\n"
-  // };
-
 };
