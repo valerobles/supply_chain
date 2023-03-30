@@ -16,12 +16,7 @@ class SupplyChain extends React.Component {
   }
 
   static ii = actor.getCaller();
-set coffee_backend(actor){
-  this.actor = actor;
-}
-set actor(actor){
-  this.actor = actor;
-}
+
   async getCaller() {
     document.getElementById("ii").value = ii;
   }
