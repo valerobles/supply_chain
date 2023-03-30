@@ -11,16 +11,16 @@ import List "mo:base/List";
 
 actor class Main() {
   //Learning: Cant return non-shared classes (aka mutable classes). Save mutable data to this actor instead of node?
-  var rootNodes = List.nil<T.Node>();
-  var allNodes = List.nil<T.Node>();
+  var rootNodes = List.nil<T.Node>(); // make stable
+  var allNodes = List.nil<T.Node>(); // make stable
 
-  var nodeId : Nat = 0;
+  var nodeId : Nat = 0; // make stable
   func natHash(n : Text) : Hash.Hash {
     Text.hash(n);
   };
   //Contains all registered suppliers
   var suppliers = Map.HashMap<Text, Text>(0, Text.equal, natHash);
-  //Creates a new chain and returns the first node.
+  //Creates a new chain and returns the first node id.
   public func createRootNode(title : Text) : async (Nat) {
 
     let newNode = createNode(List.nil<T.Node>(), title);
@@ -68,7 +68,7 @@ actor class Main() {
   };
   public query func showAllNodes() : async Text {
     var output = "";
-    List.iterate<T.Node>(allNodes, func n { output := output # "\n ID:" #Nat.toText(n.nodeId) # "Title: " #n.title });
+    List.iterate<T.Node>(allNodes, func n { output := output # "\n ID:" #Nat.toText(n.nodeId) # " Title: " #n.title });
     output;
   };
   public query func showChildNodes(nodeId:Nat) : async Text {
@@ -90,6 +90,8 @@ actor class Main() {
   public query func getSuppliers() : async [Text] {
     Iter.toArray(suppliers.vals());
   };
+
+
   let backendCallerId = "rrkah-fqaaa-aaaaa-aaaaq-cai";
   // Returns the ID that was given to the Supplier
   public func addSupplier(supplier : T.Supplier) : async Text {
@@ -104,7 +106,37 @@ actor class Main() {
     return "Error: Request denied. Caller " #caller # " is not a supplier";
   };
 
+ 
+
   public query (message) func getCaller() : async Text {
     return Principal.toText(message.caller);
   };
+
+
+
+
+
+
+  // Getting Caller Test
+  public shared(msg) func addSupplierT(userName: Text) : async Text {
+    
+      suppliers.put(Principal.toText(msg.caller), userName);  
+      return "supplier added" # Principal.toText(msg.caller) # "." ;
+  
+    
+  };
+
+  public shared(msg) func getCallerT() : async Text {
+    return Principal.toText(msg.caller);
+  };
+
+
+
+
+
 };
+
+
+
+
+

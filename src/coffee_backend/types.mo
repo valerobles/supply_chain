@@ -13,9 +13,10 @@ type Node = {
   title : Text;
  // isLast : Bool;
   owner : Supplier;
-  nextOwner : Supplier;
+  nextOwner : Supplier; // val: TODO can be multiple
   //Holds information to this node
   //TODO key/value instead of one text
   texts : L.List<Text>;
   previousNodes : L.List<Node>;
 };
+
