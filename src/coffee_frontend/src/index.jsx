@@ -75,7 +75,7 @@ class SupplyChain extends React.Component {
     return (
       <div>
         <h1>Supply Chain</h1>
-        <button type="submit" id="login">Login</button>
+        <button type="submit" id="login" onClick={() => this.login()}>Login</button>
         <div>
             Add supplier
             <table>
