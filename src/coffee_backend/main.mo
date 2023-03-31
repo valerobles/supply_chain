@@ -71,6 +71,10 @@ actor class Main() {
     List.iterate<T.Node>(allNodes, func n { output := output # "\n ID:" #Nat.toText(n.nodeId) # " Title: " #n.title });
     output;
   };
+
+  public query func getAllNodes() : async List.List<T.Node> {
+    allNodes;
+  };
   public query func showChildNodes(nodeId:Nat) : async Text {
     var output = "";
     var node =  getNodeById(nodeId);
