@@ -133,4 +133,8 @@ actor class Main() {
     return Principal.toText(msg.caller);
   };
 
+<<<<<<< HEAD
 };
+=======
+};
+>>>>>>> 1a50f7e057ef669529e547c867f95c32d9b234c9
