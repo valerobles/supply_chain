@@ -75,6 +75,22 @@ class SupplyChain extends React.Component {
    
   }
 
+  async getNodes(){
+    let all = await actor.showAllNodes();
+    console.log(all)
+    document.getElementById("allNodes").innerHTML = all;
+
+   // all.map(n => console.log(n))
+//     return (
+//      <>
+//        <h1>All nodes</h1>
+//        <ul>
+//          {all.map((node) => <li>Title: {node.title}</li>)}
+//        </ul>
+//      </>
+//    );
+   }
+
   render() {
     return (
       <div>
@@ -106,6 +122,9 @@ class SupplyChain extends React.Component {
           </table>
           <button onClick={() => this.createRootnode()}>Create Root Node</button>
         </div>
+        <br></br>
+        <button onClick={() => this.getNodes()}>Get all nodes</button>
+        <div id="allNodes"></div>
       </div>
     );
   }
