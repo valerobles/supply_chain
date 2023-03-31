@@ -8,7 +8,6 @@ import Iter "mo:base/Iter";
 import Text "mo:base/Text";
 import List "mo:base/List";
 
-
 actor class Main() {
   //Learning: Cant return non-shared classes (aka mutable classes). Save mutable data to this actor instead of node?
   var rootNodes = List.nil<T.Node>(); // make stable
@@ -37,9 +36,9 @@ actor class Main() {
       func n {
         var containsN = false;
         for (i in List.toIter<Nat>(previousNodes)) {
-          if(n.nodeId==i and n.nextOwner.userId==currentOwner.userId){
-             containsN:= true;
-          }
+          if (n.nodeId == i and n.nextOwner.userId == currentOwner.userId) {
+            containsN := true;
+          };
         };
         containsN;
       },
@@ -62,47 +61,55 @@ actor class Main() {
       previousNodes = previousNodes;
     };
   };
- 
+
   private func getNodeById(id : Nat) : (?T.Node) {
     List.find<T.Node>(allNodes, func n { n.nodeId == id });
   };
-  public query func showAllNodes() : async Text {
+  private func getNodesByOwnerId(id : Nat) : (List.List<T.Node>) {
+    var nodeList = List.nil<T.Node>();
+    List.iterate<T.Node>(allNodes, func n { if (n.owner.userId == Nat.toText(id)) { nodeList := List.push<T.Node>(n, nodeList) } });
+    nodeList;
+  };
+  private func nodeListToText(list : List.List<T.Node>) : Text {
     var output = "";
-    List.iterate<T.Node>(allNodes, func n { output := output # "\n ID:" #Nat.toText(n.nodeId) # " Title: " #n.title });
+    List.iterate<T.Node>(list, func n { output := output # "\nID: " #Nat.toText(n.nodeId) # " Title: " #n.title });
+    output;
+  };
+  public query func showNodesByOwnerId(id : Nat) : async Text {
+    nodeListToText(getNodesByOwnerId(id));
+  };
+  public query func showAllNodes() : async Text {
+    nodeListToText(allNodes);
+  };
+
+  public query func showChildNodes(nodeId : Nat) : async Text {
+    var output = "";
+    var node = getNodeById(nodeId);
+    switch (node) {
+      case null { output := "Error: Node not found" };
+      case (?node) {
+        List.iterate<T.Node>(node.previousNodes, func n { output := output # "\nID: " #Nat.toText(n.nodeId) # " Title: " #n.title });
+      };
+    };
     output;
   };
 
-  public query func getAllNodes() : async List.List<T.Node> {
-    allNodes;
-  };
-  public query func showChildNodes(nodeId:Nat) : async Text {
-    var output = "";
-    var node =  getNodeById(nodeId);
-    switch (node){
-    case null {output :="node not found"};
-    case (?node){
-    List.iterate<T.Node>(node.previousNodes, func n { output := output # "\n ID:" #Nat.toText(n.nodeId) # "Title: " #n.title });
-    };
-    };
-    output;
-  };
   public query (message) func greet() : async Text {
 
-    return "Hello, " # Principal.toText(message.caller) # "!";
+    return "Logged in as: " # Principal.toText(message.caller);
   };
 
   public query func getSuppliers() : async [Text] {
     Iter.toArray(suppliers.vals());
   };
 
-
   let backendCallerId = "rrkah-fqaaa-aaaaa-aaaaq-cai";
   // Returns the ID that was given to the Supplier
-  public func addSupplier(supplier : T.Supplier) : async Text {
+  public shared (message) func addSupplier(supplier : T.Supplier) : async Text {
     // let caller = Principal.toText(message.caller);
     let caller = await getCaller();
     //FIXME CALLER==BACKENDCALLERID MIGHT BE SECURITY RISK, MAYBE ONLY FOR TESTING
-    if (suppliers.entries().next() == null or suppliers.get(caller) != null or caller==backendCallerId) {
+    if (suppliers.entries().next() == null or suppliers.get(caller) != null or caller == backendCallerId) {
       suppliers.put(supplier.userId, supplier.userName);
       return "supplier added";
     };
@@ -110,37 +117,20 @@ actor class Main() {
     return "Error: Request denied. Caller " #caller # " is not a supplier";
   };
 
- 
-
   public query (message) func getCaller() : async Text {
     return Principal.toText(message.caller);
   };
 
-
-
-
-
-
   // Getting Caller Test
-  public shared(msg) func addSupplierT(userName: Text) : async Text {
-    
-      suppliers.put(Principal.toText(msg.caller), userName);  
-      return "supplier added" # Principal.toText(msg.caller) # "." ;
-  
-    
+  public shared (msg) func addSupplierT(userName : Text) : async Text {
+
+    suppliers.put(Principal.toText(msg.caller), userName);
+    return "supplier added" # Principal.toText(msg.caller) # ".";
+
   };
 
-  public shared(msg) func getCallerT() : async Text {
+  public shared (msg) func getCallerT() : async Text {
     return Principal.toText(msg.caller);
   };
 
-
-
-
-
 };
-
-
-
-
-
