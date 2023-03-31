@@ -44,9 +44,7 @@ class SupplyChain extends React.Component {
   }
 
   async login() {
-    let loginButton = document.getElementById("login");
-    loginButton.onclick = async (e) => {
-      e.preventDefault();
+
 
       let authClient = await AuthClient.create();
       console.log('here');
@@ -74,7 +72,7 @@ class SupplyChain extends React.Component {
       document.getElementById("greeting").innerText = greeting;
   
       return false;
-    };
+   
   }
 
   render() {
