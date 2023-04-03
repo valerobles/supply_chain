@@ -18,15 +18,8 @@ actor class Main() {
   };
   //Contains all registered suppliers
   var suppliers = Map.HashMap<Text, Text>(0, Text.equal, natHash);
-  //Creates a new chain and returns the first node id.
-  public func createRootNode(title : Text) : async (Nat) {
 
-    let newNode = createNode(List.nil<T.Node>(), title);
-
-    allNodes := List.push<T.Node>(newNode, allNodes);
-    nodeId;
-  };
-
+//TODO only suppliers can create a leafnode
   //Creates a New node with n child nodes. Child nodes are given as a list of IDs in previousnodes.
   //CurrentOwner needs to be the same as "nextOwner" in the given childNodes to point to them.
   public func createLeafNode(previousNodes : List.List<Nat>, title : Text, currentOwner : T.Supplier) : async (Nat) {
@@ -73,16 +66,31 @@ actor class Main() {
     Utils.nodeListToText(allNodes);
   };
 
-  public query func showChildNodes(nodeId : Nat) : async Text {
+//Recursive function to append all child nodes of a given Node by ID.
+//Returns dependency structure as a text
+  private func showChildNodes(nodeId : Nat, level : Text) : (Text) {
     var output = "";
     var node = Utils.getNodeById(nodeId, allNodes);
     switch (node) {
       case null { output := "Error: Node not found" };
       case (?node) {
-        List.iterate<T.Node>(node.previousNodes, func n { output := output # "\nID: " #Nat.toText(n.nodeId) # " Title: " #n.title });
+        List.iterate<T.Node>(
+          node.previousNodes,
+          func n {
+            output := output # "\n"#level#"ID: " #Nat.toText(n.nodeId) # " Title: " #n.title;
+            let childNodes = n.previousNodes;
+            switch (childNodes){
+              case (null){};
+              case (?nchildNodes){output := output #showChildNodes(n.nodeId, level # "----");};
+            };
+          },
+        );
       };
     };
     output;
+  };
+  public query func showAllChildNodes(nodeId : Nat) : async Text{
+    showChildNodes(nodeId,"");
   };
 
   public query (message) func greet() : async Text {
@@ -103,11 +111,12 @@ actor class Main() {
     let caller = await getCaller();
 
     //FIXME CALLER==BACKENDCALLERID MIGHT BE SECURITY RISK. ONLY FOR TESTING
-    // Exceptions for the first entry and if the caller is the backend canister. 
+    // Exceptions for the first entry and if the caller is the backend canister.
     // Suppliers can only be added  by authorized users. Existing IDs may not be overwritten
+    //FIXME overwrite protection doesnt work yet
     if (suppliers.entries().next() == null or caller == backendCallerId or (suppliers.get(caller) != null and suppliers.get(supplier.userId) == null)) {
       suppliers.put(supplier.userId, supplier.userName);
-      return "supplier with ID:"#supplier.userId#" Name:"#supplier.userName# "added";
+      return "supplier with ID:" #supplier.userId # " Name:" #supplier.userName # "added";
     };
 
     return "Error: Request denied. Caller " #caller # " is not a supplier";
@@ -116,5 +125,4 @@ actor class Main() {
   public query (message) func getCaller() : async Text {
     return Principal.toText(message.caller);
   };
-
 };
