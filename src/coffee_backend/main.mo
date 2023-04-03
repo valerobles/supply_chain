@@ -7,10 +7,9 @@ import Hash "mo:base/Hash";
 import Iter "mo:base/Iter";
 import Text "mo:base/Text";
 import List "mo:base/List";
-
+import Utils "utils";
 actor class Main() {
   //Learning: Cant return non-shared classes (aka mutable classes). Save mutable data to this actor instead of node?
-  var rootNodes = List.nil<T.Node>(); // make stable
   var allNodes = List.nil<T.Node>(); // make stable
 
   var nodeId : Nat = 0; // make stable
@@ -23,7 +22,7 @@ actor class Main() {
   public func createRootNode(title : Text) : async (Nat) {
 
     let newNode = createNode(List.nil<T.Node>(), title);
-    rootNodes := List.push<T.Node>(newNode, rootNodes);
+  
     allNodes := List.push<T.Node>(newNode, allNodes);
     nodeId;
   };
@@ -48,7 +47,8 @@ actor class Main() {
     allNodes := List.push<T.Node>(newNode, allNodes);
     nodeId;
   };
-  //TODO next owner gets notified to create node containing this one and maybe others
+
+   //TODO next owner gets notified to create node containing this one and maybe others
   private func createNode(previousNodes : List.List<T.Node>, title : Text) : (T.Node) {
     nodeId += 1;
     {
@@ -62,29 +62,16 @@ actor class Main() {
     };
   };
 
-  private func getNodeById(id : Nat) : (?T.Node) {
-    List.find<T.Node>(allNodes, func n { n.nodeId == id });
-  };
-  private func getNodesByOwnerId(id : Nat) : (List.List<T.Node>) {
-    var nodeList = List.nil<T.Node>();
-    List.iterate<T.Node>(allNodes, func n { if (n.owner.userId == Nat.toText(id)) { nodeList := List.push<T.Node>(n, nodeList) } });
-    nodeList;
-  };
-  private func nodeListToText(list : List.List<T.Node>) : Text {
-    var output = "";
-    List.iterate<T.Node>(list, func n { output := output # "\nID: " #Nat.toText(n.nodeId) # " Title: " #n.title });
-    output;
-  };
   public query func showNodesByOwnerId(id : Nat) : async Text {
-    nodeListToText(getNodesByOwnerId(id));
+    Utils.nodeListToText(Utils.getNodesByOwnerId(id,allNodes));
   };
   public query func showAllNodes() : async Text {
-    nodeListToText(allNodes);
+    Utils.nodeListToText(allNodes);
   };
 
   public query func showChildNodes(nodeId : Nat) : async Text {
     var output = "";
-    var node = getNodeById(nodeId);
+    var node = Utils.getNodeById(nodeId,allNodes);
     switch (node) {
       case null { output := "Error: Node not found" };
       case (?node) {
