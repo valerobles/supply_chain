@@ -108,16 +108,4 @@ actor class Main() {
     return Principal.toText(message.caller);
   };
 
-  // Getting Caller Test
-  public shared (msg) func addSupplierT(userName : Text) : async Text {
-
-    suppliers.put(Principal.toText(msg.caller), userName);
-    return "supplier added" # Principal.toText(msg.caller) # ".";
-
-  };
-
-  public shared (msg) func getCallerT() : async Text {
-    return Principal.toText(msg.caller);
-  };
-
 };
