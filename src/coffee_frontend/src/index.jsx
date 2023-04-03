@@ -44,9 +44,7 @@ class SupplyChain extends React.Component {
   }
 
   async login() {
-    let loginButton = document.getElementById("login");
-    loginButton.onclick = async (e) => {
-      e.preventDefault();
+
 
       let authClient = await AuthClient.create();
       console.log('here');
@@ -74,8 +72,24 @@ class SupplyChain extends React.Component {
       document.getElementById("greeting").innerText = greeting;
   
       return false;
-    };
+   
   }
+
+  async getNodes(){
+    let all = await actor.showAllNodes();
+    console.log(all)
+    document.getElementById("allNodes").innerHTML = all;
+
+   // all.map(n => console.log(n))
+//     return (
+//      <>
+//        <h1>All nodes</h1>
+//        <ul>
+//          {all.map((node) => <li>Title: {node.title}</li>)}
+//        </ul>
+//      </>
+//    );
+   }
 
   render() {
     return (
@@ -108,6 +122,9 @@ class SupplyChain extends React.Component {
           </table>
           <button onClick={() => this.createRootnode()}>Create Root Node</button>
         </div>
+        <br></br>
+        <button onClick={() => this.getNodes()}>Get all nodes</button>
+        <div id="allNodes"></div>
       </div>
     );
   }
