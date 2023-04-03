@@ -18,18 +18,26 @@ actor class Main() {
   };
   //Contains all registered suppliers
   var suppliers = Map.HashMap<Text, Text>(0, Text.equal, natHash);
+  public func createRootNode(title : Text, currentOwner : T.Supplier) : async (Nat) {
+    // Map Ids in previousNodes to actual nodes, add them to childNodes if owner is authorized
 
-//TODO only suppliers can create a leafnode
+    //Create the new node with a list of child nodes and other metadata
+    let newNode = createNode(List.nil(), title);
+
+    allNodes := List.push<T.Node>(newNode, allNodes);
+    nodeId;
+  };
+  //TODO only suppliers can create a leafnode
   //Creates a New node with n child nodes. Child nodes are given as a list of IDs in previousnodes.
   //CurrentOwner needs to be the same as "nextOwner" in the given childNodes to point to them.
-  public func createLeafNode(previousNodes : List.List<Nat>, title : Text, currentOwner : T.Supplier) : async (Nat) {
+  public func createLeafNode(previousNodes : [Nat], title : Text, currentOwner : T.Supplier) : async (Nat) {
     // Map Ids in previousNodes to actual nodes, add them to childNodes if owner is authorized
     var childNodes = List.filter<T.Node>(
       allNodes,
       func n {
         var containsN = false;
-        for (i in List.toIter<Nat>(previousNodes)) {
-          if (n.nodeId == i and n.nextOwner.userId == currentOwner.userId) {
+        for (i in Array.vals(previousNodes)) {
+          if (n.nodeId == i and n.nextOwner.userId == currentOwner.userId and n.nodeId!=nodeId+1) {
             containsN := true;
           };
         };
@@ -66,8 +74,8 @@ actor class Main() {
     Utils.nodeListToText(allNodes);
   };
 
-//Recursive function to append all child nodes of a given Node by ID.
-//Returns dependency structure as a text
+  //Recursive function to append all child nodes of a given Node by ID.
+  //Returns dependency structure as a text
   private func showChildNodes(nodeId : Nat, level : Text) : (Text) {
     var output = "";
     var node = Utils.getNodeById(nodeId, allNodes);
@@ -77,11 +85,13 @@ actor class Main() {
         List.iterate<T.Node>(
           node.previousNodes,
           func n {
-            output := output # "\n"#level#"ID: " #Nat.toText(n.nodeId) # " Title: " #n.title;
+            output := output # "\n" #level # "ID: " #Nat.toText(n.nodeId) # " Title: " #n.title;
             let childNodes = n.previousNodes;
-            switch (childNodes){
-              case (null){};
-              case (?nchildNodes){output := output #showChildNodes(n.nodeId, level # "----");};
+            switch (childNodes) {
+              case (null) {};
+              case (?nchildNodes) {
+                output := output #showChildNodes(n.nodeId, level # "----");
+              };
             };
           },
         );
@@ -89,8 +99,8 @@ actor class Main() {
     };
     output;
   };
-  public query func showAllChildNodes(nodeId : Nat) : async Text{
-    showChildNodes(nodeId,"");
+  public query func showAllChildNodes(nodeId : Nat) : async Text {
+    showChildNodes(nodeId, "");
   };
 
   public query (message) func greet() : async Text {

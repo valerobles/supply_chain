@@ -36,60 +36,74 @@ class SupplyChain extends React.Component {
     // actor.addSupplier(ii, userName);
   }
 
-  async createRootnode() {
-    let title = document.getElementById("newRootNode").value
-    actor.createRootNode(title);
-
-    title = "";
+  async createNode() {
+    let title = document.getElementById("newNodeTitle");
+    let children = document.getElementById("newNodeChildren");
+    const tValue = title.value;
+    const cValue = children.value;
+    title.value = "";
+    children.value = "";
+    let result = "Created Node with ID: ";
+    if (tValue.length > 0) {
+      if (cValue.length == 0) {
+        result += await actor.createRootNode(tValue, { userName: "test", userId: "test" });
+      } else {
+        let numbers = cValue.split(',').map(function (item) {
+          return parseInt(item, 10);
+        });
+        result += await actor.createLeafNode(numbers, tValue, { userName: "test", userId: "test" });
+      }
+      document.getElementById("createResult").innerText = result;
+    }
   }
 
   async login() {
 
 
-      let authClient = await AuthClient.create();
-      console.log('here');
+    let authClient = await AuthClient.create();
+    console.log('here');
 
-      await new Promise((resolve) => {
-        authClient.login({
-          identityProvider: process.env.II_URL,
-          onSuccess: resolve,
-        });
+    await new Promise((resolve) => {
+      authClient.login({
+        identityProvider: process.env.II_URL,
+        onSuccess: resolve,
       });
+    });
 
-      // At this point we're authenticated, and we can get the identity from the auth client:
-      const identity = authClient.getIdentity();
-      console.log(identity);
-      // Using the identity obtained from the auth client, we can create an agent to interact with the IC.
-      const agent = new HttpAgent({ identity });
-      // Using the interface description of our webapp, we create an actor that we use to call the service methods. We override the global actor, such that the other button handler will automatically use the new actor with the Internet Identity provided delegation.
-      
-      //FIXME set global actor to new Actor
-      let newActor = createActor(process.env.COFFEE_BACKEND_CANISTER_ID, {
-        agent,
-      });
+    // At this point we're authenticated, and we can get the identity from the auth client:
+    const identity = authClient.getIdentity();
+    console.log(identity);
+    // Using the identity obtained from the auth client, we can create an agent to interact with the IC.
+    const agent = new HttpAgent({ identity });
+    // Using the interface description of our webapp, we create an actor that we use to call the service methods. We override the global actor, such that the other button handler will automatically use the new actor with the Internet Identity provided delegation.
 
-      const greeting = await newActor.greet();
-      document.getElementById("greeting").innerText = greeting;
-  
-      return false;
-   
+    //FIXME set global actor to new Actor
+    let newActor = createActor(process.env.COFFEE_BACKEND_CANISTER_ID, {
+      agent,
+    });
+
+    const greeting = await newActor.greet();
+    document.getElementById("greeting").innerText = greeting;
+
+    return false;
+
   }
 
-  async getNodes(){
+  async getNodes() {
     let all = await actor.showAllNodes();
     console.log(all)
     document.getElementById("allNodes").innerHTML = all;
 
-   // all.map(n => console.log(n))
-//     return (
-//      <>
-//        <h1>All nodes</h1>
-//        <ul>
-//          {all.map((node) => <li>Title: {node.title}</li>)}
-//        </ul>
-//      </>
-//    );
-   }
+    // all.map(n => console.log(n))
+    //     return (
+    //      <>
+    //        <h1>All nodes</h1>
+    //        <ul>
+    //          {all.map((node) => <li>Title: {node.title}</li>)}
+    //        </ul>
+    //      </>
+    //    );
+  }
 
   render() {
     return (
@@ -112,15 +126,17 @@ class SupplyChain extends React.Component {
           <br></br>
         </div>
         <div>
-          Create Root node:
+          Create node:
           <table>
             <tbody>
               <tr>
-                <td>Title:</td><td><input required id="newRootNode"></input></td>
+                <td>Title:</td><td><input required id="newNodeTitle"></input></td>
+                <td>Child nodes:</td><td><input id="newNodeChildren" placeholder="1,2,..."></input></td>
               </tr>
             </tbody>
           </table>
-          <button onClick={() => this.createRootnode()}>Create Root Node</button>
+          <button onClick={() => this.createNode()}>Create Node</button>
+          <div id="createResult"></div>
         </div>
         <br></br>
         <button onClick={() => this.getNodes()}>Get all nodes</button>
