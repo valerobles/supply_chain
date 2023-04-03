@@ -22,15 +22,16 @@ actor class Main() {
   public func createRootNode(title : Text) : async (Nat) {
 
     let newNode = createNode(List.nil<T.Node>(), title);
-  
+
     allNodes := List.push<T.Node>(newNode, allNodes);
     nodeId;
   };
 
-  //TODO remove previousNodes that were used from allNodes
+  //Creates a New node with n child nodes. Child nodes are given as a list of IDs in previousnodes.
+  //CurrentOwner needs to be the same as "nextOwner" in the given childNodes to point to them.
   public func createLeafNode(previousNodes : List.List<Nat>, title : Text, currentOwner : T.Supplier) : async (Nat) {
-    // Create a list of all Previous nodes given as a param that actually exist and point to the right owner.
-    var l = List.filter<T.Node>(
+    // Map Ids in previousNodes to actual nodes, add them to childNodes if owner is authorized
+    var childNodes = List.filter<T.Node>(
       allNodes,
       func n {
         var containsN = false;
@@ -42,13 +43,15 @@ actor class Main() {
         containsN;
       },
     );
+    //Create the new node with a list of child nodes and other metadata
+    let newNode = createNode(childNodes, title);
 
-    let newNode = createNode(l, title);
     allNodes := List.push<T.Node>(newNode, allNodes);
     nodeId;
   };
 
-   //TODO next owner gets notified to create node containing this one and maybe others
+  //TODO next owner gets notified to create node containing this one and maybe others
+  //Creates a new Node, increments nodeId BEFORE creating it.
   private func createNode(previousNodes : List.List<T.Node>, title : Text) : (T.Node) {
     nodeId += 1;
     {
@@ -63,7 +66,7 @@ actor class Main() {
   };
 
   public query func showNodesByOwnerId(id : Nat) : async Text {
-    Utils.nodeListToText(Utils.getNodesByOwnerId(id,allNodes));
+    Utils.nodeListToText(Utils.getNodesByOwnerId(id, allNodes));
   };
   public query func showAllNodes() : async Text {
     Utils.nodeListToText(allNodes);
@@ -71,7 +74,7 @@ actor class Main() {
 
   public query func showChildNodes(nodeId : Nat) : async Text {
     var output = "";
-    var node = Utils.getNodeById(nodeId,allNodes);
+    var node = Utils.getNodeById(nodeId, allNodes);
     switch (node) {
       case null { output := "Error: Node not found" };
       case (?node) {
@@ -91,14 +94,19 @@ actor class Main() {
   };
 
   let backendCallerId = "rrkah-fqaaa-aaaaa-aaaaq-cai";
-  // Returns the ID that was given to the Supplier
+
+  // Adds a new Supplier with to suppliers map with key = internet identity value = username
+  // Only suppliers can add new suppliers. Exceptions for the first supplier added and the backend canister ID.
+  // TODO Only admins can add suppliers
   public shared (message) func addSupplier(supplier : T.Supplier) : async Text {
-    // let caller = Principal.toText(message.caller);
     let caller = await getCaller();
-    //FIXME CALLER==BACKENDCALLERID MIGHT BE SECURITY RISK, MAYBE ONLY FOR TESTING
-    if (suppliers.entries().next() == null or suppliers.get(caller) != null or caller == backendCallerId) {
+
+    //FIXME CALLER==BACKENDCALLERID MIGHT BE SECURITY RISK. ONLY FOR TESTING
+    // Exceptions for the first entry and if the caller is the backend canister. 
+    // Suppliers can only be added  by authorized users. Existing IDs may not be overwritten
+    if (suppliers.entries().next() == null or caller == backendCallerId or (suppliers.get(caller) != null and suppliers.get(supplier.userId) == null)) {
       suppliers.put(supplier.userId, supplier.userName);
-      return "supplier added";
+      return "supplier with ID:"#supplier.userId#" Name:"#supplier.userName# "added";
     };
 
     return "Error: Request denied. Caller " #caller # " is not a supplier";
