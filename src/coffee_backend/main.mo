@@ -65,6 +65,7 @@ actor class Main() {
     };
   };
 
+  //returns all Nodes corresponding to their owner by Id
   public query func showNodesByOwnerId(id : Nat) : async Text {
     Utils.nodeListToText(Utils.getNodesByOwnerId(id, allNodes));
   };
