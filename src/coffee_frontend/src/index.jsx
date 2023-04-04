@@ -1,4 +1,4 @@
-import { createActor, coffee_backend as actor } from "../../declarations/coffee_backend";
+import { createActor, coffee_backend } from "../../declarations/coffee_backend";
 import { AuthClient } from "@dfinity/auth-client"
 import { HttpAgent } from "@dfinity/agent";
 import * as React from 'react';
@@ -12,13 +12,12 @@ class SupplyChain extends React.Component {
 
   constructor(props) {
     super(props);
-    this.state = {};
+    this.state = {actor : coffee_backend};
+   
   }
 
-  static ii = actor.getCaller();
-
   async getCaller() {
-    document.getElementById("ii").value = ii;
+    document.getElementById("ii").value = this.state.actor.getCaller();
   }
 
   async addSupplier() {
@@ -29,7 +28,7 @@ class SupplyChain extends React.Component {
       userId: userID.value,
 
     }
-    actor.addSupplier(supplier);
+    this.state.actor.addSupplier(supplier);
 
     userName.value = "";
     userID.value = "";
@@ -46,12 +45,12 @@ class SupplyChain extends React.Component {
     let result = "Created Node with ID: ";
     if (tValue.length > 0) {
       if (cValue.length == 0) {
-        result += await actor.createRootNode(tValue, { userName: "test", userId: "test" });
+        result += await this.state.actor.createRootNode(tValue, { userName: "test", userId: "test" });
       } else {
         let numbers = cValue.split(',').map(function (item) {
           return parseInt(item, 10);
         });
-        result += await actor.createLeafNode(numbers, tValue, { userName: "test", userId: "test" });
+        result += await this.state.actor.createLeafNode(numbers, tValue, { userName: "test", userId: "test" });
       }
       document.getElementById("createResult").innerText = result;
     }
@@ -76,13 +75,10 @@ class SupplyChain extends React.Component {
     // Using the identity obtained from the auth client, we can create an agent to interact with the IC.
     const agent = new HttpAgent({ identity });
     // Using the interface description of our webapp, we create an actor that we use to call the service methods. We override the global actor, such that the other button handler will automatically use the new actor with the Internet Identity provided delegation.
-
-    //FIXME set global actor to new Actor
-    let newActor = createActor(process.env.COFFEE_BACKEND_CANISTER_ID, {
+    this.state.actor = createActor(process.env.COFFEE_BACKEND_CANISTER_ID, {
       agent,
     });
-
-    const greeting = await newActor.greet();
+    const greeting = await this.state.actor.greet();
     document.getElementById("greeting").innerText = greeting;
 
     return false;
@@ -90,7 +86,7 @@ class SupplyChain extends React.Component {
   }
 
   async getNodes() {
-    let all = await actor.showAllNodes();
+    let all = await this.state.actor.showAllNodes();
     console.log(all)
     document.getElementById("allNodes").innerHTML = all;
 

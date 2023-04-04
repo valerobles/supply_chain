@@ -8,7 +8,7 @@ import Iter "mo:base/Iter";
 import Text "mo:base/Text";
 import List "mo:base/List";
 import Utils "utils";
-actor class Main() {
+actor  Main {
   //Learning: Cant return non-shared classes (aka mutable classes). Save mutable data to this actor instead of node?
   var allNodes = List.nil<T.Node>(); // make stable
 
