@@ -6,14 +6,11 @@ type Supplier = {
 };
 type Node = {
  
-  //ID of the supply chain
-  //chainId : Nat;
-  //ID of the single Node, maybe not needed?
+  //ID of the single Node
   nodeId : Nat;
   title : Text;
- // isLast : Bool;
   owner : Supplier;
-  nextOwner : Supplier; // val: TODO can be multiple
+  nextOwner : Supplier; 
   //Holds information to this node
   //TODO key/value instead of one text
   texts : L.List<Text>;

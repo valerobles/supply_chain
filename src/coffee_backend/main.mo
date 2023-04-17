@@ -37,7 +37,7 @@ actor  Main {
       func n {
         var containsN = false;
         for (i in Array.vals(previousNodes)) {
-          if (n.nodeId == i and n.nextOwner.userId == currentOwner.userId and n.nodeId!=nodeId+1) {
+          if (n.nodeId == i and n.nextOwner.userId == currentOwner.userId ) { // and n.nodeId!=nodeId+1
             containsN := true;
           };
         };
