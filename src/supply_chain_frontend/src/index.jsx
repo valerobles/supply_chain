@@ -1,4 +1,4 @@
-import { createActor, coffee_backend } from "../../declarations/coffee_backend";
+import { createActor, supply_chain_backend } from "../../declarations/supply_chain_backend";
 import { AuthClient } from "@dfinity/auth-client"
 import { HttpAgent } from "@dfinity/agent";
 import * as React from 'react';
@@ -12,7 +12,7 @@ class SupplyChain extends React.Component {
 
   constructor(props) {
     super(props);
-    this.state = {actor : coffee_backend};
+    this.state = {actor : supply_chain_backend};
    
   }
 
@@ -75,7 +75,7 @@ class SupplyChain extends React.Component {
     // Using the identity obtained from the auth client, we can create an agent to interact with the IC.
     const agent = new HttpAgent({ identity });
     // Using the interface description of our webapp, we create an actor that we use to call the service methods. We override the global actor, such that the other button handler will automatically use the new actor with the Internet Identity provided delegation.
-    this.state.actor = createActor(process.env.COFFEE_BACKEND_CANISTER_ID, {
+    this.state.actor = createActor(process.env.SUPPLY_CHAIN_BACKEND_CANISTER_ID, {
       agent,
     });
     const greeting = await this.state.actor.greet();
