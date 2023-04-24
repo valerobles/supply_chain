@@ -8,7 +8,7 @@ import Iter "mo:base/Iter";
 import Text "mo:base/Text";
 import List "mo:base/List";
 import Utils "utils";
-actor  Main {
+actor Main {
   //Learning: Cant return non-shared classes (aka mutable classes). Save mutable data to this actor instead of node?
   var allNodes = List.nil<T.Node>(); // make stable
 
@@ -18,26 +18,33 @@ actor  Main {
   };
   //Contains all registered suppliers
   var suppliers = Map.HashMap<Text, Text>(0, Text.equal, natHash);
-  public func createRootNode(title : Text, currentOwner : T.Supplier) : async (Nat) {
+  public func createRootNode(title : Text, currentOwnerId : Text) : async (Nat) {
     // Map Ids in previousNodes to actual nodes, add them to childNodes if owner is authorized
 
     //Create the new node with a list of child nodes and other metadata
-    let newNode = createNode(List.nil(), title);
+    let username = suppliers.get(currentOwnerId);
+    switch (username) {
+      case null { return 0 };
+      case (?username) {
+        let newNode = createNode(List.nil(), title, { userId = currentOwnerId; userName = username });
 
-    allNodes := List.push<T.Node>(newNode, allNodes);
-    nodeId;
+        allNodes := List.push<T.Node>(newNode, allNodes);
+        nodeId;
+      };
+    };
   };
   //TODO only suppliers can create a leafnode
   //Creates a New node with n child nodes. Child nodes are given as a list of IDs in previousnodes.
   //CurrentOwner needs to be the same as "nextOwner" in the given childNodes to point to them.
-  public func createLeafNode(previousNodes : [Nat], title : Text, currentOwner : T.Supplier) : async (Nat) {
+  public func createLeafNode(previousNodes : [Nat], title : Text, currentOwnerId : Text) : async (Nat) {
     // Map Ids in previousNodes to actual nodes, add them to childNodes if owner is authorized
     var childNodes = List.filter<T.Node>(
       allNodes,
       func n {
         var containsN = false;
         for (i in Array.vals(previousNodes)) {
-          if (n.nodeId == i and n.nextOwner.userId == currentOwner.userId ) { // and n.nodeId!=nodeId+1
+          if (n.nodeId == i and n.nextOwner.userId == currentOwnerId) {
+            // and n.nodeId!=nodeId+1
             containsN := true;
           };
         };
@@ -45,21 +52,28 @@ actor  Main {
       },
     );
     //Create the new node with a list of child nodes and other metadata
-    let newNode = createNode(childNodes, title);
+    let username = suppliers.get(currentOwnerId);
+    switch (username) {
+      case null { return 0 };
+      case (?username) {
+        let newNode = createNode(childNodes, title, { userId = currentOwnerId; userName = username });
 
-    allNodes := List.push<T.Node>(newNode, allNodes);
-    nodeId;
+        allNodes := List.push<T.Node>(newNode, allNodes);
+        nodeId;
+      };
+    };
+
   };
 
   //TODO next owner gets notified to create node containing this one and maybe others
   //Creates a new Node, increments nodeId BEFORE creating it.
-  private func createNode(previousNodes : List.List<T.Node>, title : Text) : (T.Node) {
+  private func createNode(previousNodes : List.List<T.Node>, title : Text, currentOwner : T.Supplier) : (T.Node) {
     nodeId += 1;
     {
       nodeId = nodeId;
       title = title;
       // isLast = false;
-      owner = { userId = "test"; userName = "test" };
+      owner = { userId = currentOwner.userId; userName = currentOwner.userName };
       nextOwner = { userId = "test"; userName = "test" };
       texts = List.nil<Text>();
       previousNodes = previousNodes;
@@ -67,7 +81,7 @@ actor  Main {
   };
 
   //returns all Nodes corresponding to their owner by Id
-  public query func showNodesByOwnerId(id : Nat) : async Text {
+  public query func showNodesByOwnerId(id : Text) : async Text {
     Utils.nodeListToText(Utils.getNodesByOwnerId(id, allNodes));
   };
   public query func showAllNodes() : async Text {
@@ -135,4 +149,5 @@ actor  Main {
   public query (message) func getCaller() : async Text {
     return Principal.toText(message.caller);
   };
+
 };

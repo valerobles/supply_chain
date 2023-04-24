@@ -6,9 +6,9 @@ module Utils {
    public func getNodeById(id : Nat, allNodes : List.List<T.Node>) : (?T.Node) {
     List.find<T.Node>(allNodes, func n { n.nodeId == id });
   };
-   public func getNodesByOwnerId(id : Nat, allNodes : List.List<T.Node>) : (List.List<T.Node>) {
+   public func getNodesByOwnerId(id : Text, allNodes : List.List<T.Node>) : (List.List<T.Node>) {
     var nodeList = List.nil<T.Node>();
-    List.iterate<T.Node>(allNodes, func n { if (n.owner.userId == Nat.toText(id)) { nodeList := List.push<T.Node>(n, nodeList) } });
+    List.iterate<T.Node>(allNodes, func n { if (n.owner.userId == id) { nodeList := List.push<T.Node>(n, nodeList) } });
     nodeList;
   };
   public func nodeListToText(list : List.List<T.Node>) : Text {
