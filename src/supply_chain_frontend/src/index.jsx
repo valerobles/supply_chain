@@ -37,14 +37,14 @@ class SupplyChain extends React.Component {
 
   async createNode() {
     const caller = await this.state.actor.getCaller();
-    console.log(caller)
+  
     let title = document.getElementById("newNodeTitle");
     let children = document.getElementById("newNodeChildren");
     const tValue = title.value;
     const cValue = children.value;
     title.value = "";
     children.value = "";
-    let result = "Created Node with ID: ";
+    let result = "";
     if (tValue.length > 0) {
       if (cValue.length == 0) {
         result += await this.state.actor.createRootNode(tValue, caller);
@@ -54,6 +54,14 @@ class SupplyChain extends React.Component {
         });
         result += await this.state.actor.createLeafNode(numbers, tValue, caller);
       }
+      if(result == "0"){
+        if(caller=="2vxsx-fae"){
+          result ="Node was not created. Login to a supplier account to create nodes."
+        }
+        result ="Node was not created. Account with id '"+caller+"' is not a supplier."
+      }else{
+        result = "Created Node with ID: "+ result;
+      }
       document.getElementById("createResult").innerText = result;
     }
   }
@@ -62,7 +70,7 @@ class SupplyChain extends React.Component {
 
 
     let authClient = await AuthClient.create();
-    console.log('here');
+  
 
     await new Promise((resolve) => {
       authClient.login({
@@ -89,18 +97,7 @@ class SupplyChain extends React.Component {
 
   async getNodes() {
     let all = await this.state.actor.showAllNodes();
-    console.log(all)
     document.getElementById("allNodes").innerHTML = all;
-
-    // all.map(n => console.log(n))
-    //     return (
-    //      <>
-    //        <h1>All nodes</h1>
-    //        <ul>
-    //          {all.map((node) => <li>Title: {node.title}</li>)}
-    //        </ul>
-    //      </>
-    //    );
   }
 
   render() {
