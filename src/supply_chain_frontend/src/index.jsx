@@ -39,23 +39,29 @@ class SupplyChain extends React.Component {
     const caller = await this.state.actor.getCaller();
   
     let title = document.getElementById("newNodeTitle");
+    let nextOwnerID = document.getElementById("newNodeNextOwner");
     let children = document.getElementById("newNodeChildren");
     const tValue = title.value;
     const cValue = children.value;
+    const nValue = nextOwnerID.value;
     title.value = "";
     children.value = "";
+    nextOwnerID.value="";
     let result = "";
     if (tValue.length > 0) {
+      //Check if there are any child nodes. If not, the node is a "rootnode", which is a node without children
+      let array = [];
       if (cValue.length == 0) {
-        result += await this.state.actor.createRootNode(tValue, caller);
+        result += await this.state.actor.createLeafNode([0],tValue, caller,nValue);
       } else {
+        //Split child node IDs by ","
         let numbers = cValue.split(',').map(function (item) {
           return parseInt(item, 10);
         });
-        result += await this.state.actor.createLeafNode(numbers, tValue, caller);
+        result += await this.state.actor.createLeafNode(numbers, tValue, caller,nValue);
       }
-      if(result == "0"){
-        if(caller=="2vxsx-fae"){
+      if(result === "0"){
+        if(caller==="2vxsx-fae"){
           result ="Node was not created. Login to a supplier account to create nodes."
         }
         result ="Node was not created. Account with id '"+caller+"' is not a supplier."
@@ -126,6 +132,7 @@ class SupplyChain extends React.Component {
             <tbody>
               <tr>
                 <td>Title:</td><td><input required id="newNodeTitle"></input></td>
+                <td>Next Owner ID:</td><td><input required id="newNodeNextOwner"></input></td>
                 <td>Child nodes:</td><td><input id="newNodeChildren" placeholder="1,2,..."></input></td>
               </tr>
             </tbody>

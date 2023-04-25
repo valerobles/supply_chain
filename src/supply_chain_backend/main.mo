@@ -18,48 +18,67 @@ actor Main {
   };
   //Contains all registered suppliers
   var suppliers = Map.HashMap<Text, Text>(0, Text.equal, natHash);
-  public func createRootNode(title : Text, currentOwnerId : Text) : async (Nat) {
-    // Map Ids in previousNodes to actual nodes, add them to childNodes if owner is authorized
+  // public func createRootNode(title : Text, currentOwnerId : Text) : async (Nat) {
+  //   // Map Ids in previousNodes to actual nodes, add them to childNodes if owner is authorized
 
-    //Create the new node with a list of child nodes and other metadata
-    let username = suppliers.get(currentOwnerId);
-    switch (username) {
-      case null { return 0 };
-      case (?username) {
-        let newNode = createNode(List.nil(), title, { userId = currentOwnerId; userName = username });
+  //   //Create the new node with a list of child nodes and other metadata
+  //   let username = suppliers.get(currentOwnerId);
+  //   switch (username) {
+  //     case null { return 0 };
+  //     case (?username) {
+  //       let newNode = createNode(List.nil(), title, { userId = currentOwnerId; userName = username });
 
-        allNodes := List.push<T.Node>(newNode, allNodes);
-        nodeId;
-      };
-    };
-  };
-  //TODO only suppliers can create a leafnode
+  //       allNodes := List.push<T.Node>(newNode, allNodes);
+  //       nodeId;
+  //     };
+  //   };
+  // };
+
   //Creates a New node with n child nodes. Child nodes are given as a list of IDs in previousnodes.
   //CurrentOwner needs to be the same as "nextOwner" in the given childNodes to point to them.
-  public func createLeafNode(previousNodes : [Nat], title : Text, currentOwnerId : Text) : async (Nat) {
-    // Map Ids in previousNodes to actual nodes, add them to childNodes if owner is authorized
-    var childNodes = List.filter<T.Node>(
-      allNodes,
-      func n {
-        var containsN = false;
-        for (i in Array.vals(previousNodes)) {
-          if (n.nodeId == i and n.nextOwner.userId == currentOwnerId) {
-            // and n.nodeId!=nodeId+1
-            containsN := true;
+  public func createLeafNode(previousNodes : [Nat], title : Text, currentOwnerId : Text, nextOwnerId : Text) : async (Nat) {
+
+    let username = suppliers.get(currentOwnerId);
+    let usernameNextOwner = suppliers.get(nextOwnerId);
+
+    //Check if  next owner is null
+    switch (usernameNextOwner) {
+      case null { return 0 };
+      case (?usernameNextOwner) {
+        //Check if  current owner is null
+        switch (username) {
+          case null { return 0 };
+          case (?username) {
+           
+            if (previousNodes.size() == 0) {
+              let newNode = createNode(List.nil(), title, { userId = currentOwnerId; userName = username }, { userId = nextOwnerId; userName = usernameNextOwner });
+              allNodes := List.push<T.Node>(newNode, allNodes);
+              nodeId;
+            } else {
+              // Map given Ids (previousNodes) to actual nodes, if they exist, they are added to childNodes
+              var childNodes = List.filter<T.Node>(
+                allNodes,
+                func n {
+                  var containsN = false;
+                  for (i in Array.vals(previousNodes)) {
+                    //Check if the node exists and if the currentOwner was defined as the nextOwner
+                    if (n.nodeId == i and n.nextOwner.userId == currentOwnerId) {
+                      // and n.nodeId!=nodeId+1
+                      containsN := true;
+                    };
+                  };
+                  containsN;
+                },
+              );
+
+              //Create the new node with a list of child nodes and other metadata
+              let newNode = createNode(childNodes, title, { userId = currentOwnerId; userName = username }, { userId = nextOwnerId; userName = usernameNextOwner });
+
+              allNodes := List.push<T.Node>(newNode, allNodes);
+              nodeId;
+            };
           };
         };
-        containsN;
-      },
-    );
-    //Create the new node with a list of child nodes and other metadata
-    let username = suppliers.get(currentOwnerId);
-    switch (username) {
-      case null { return 0 };
-      case (?username) {
-        let newNode = createNode(childNodes, title, { userId = currentOwnerId; userName = username });
-
-        allNodes := List.push<T.Node>(newNode, allNodes);
-        nodeId;
       };
     };
 
@@ -67,14 +86,13 @@ actor Main {
 
   //TODO next owner gets notified to create node containing this one and maybe others
   //Creates a new Node, increments nodeId BEFORE creating it.
-  private func createNode(previousNodes : List.List<T.Node>, title : Text, currentOwner : T.Supplier) : (T.Node) {
+  private func createNode(previousNodes : List.List<T.Node>, title : Text, currentOwner : T.Supplier, nextOwner : T.Supplier) : (T.Node) {
     nodeId += 1;
     {
       nodeId = nodeId;
       title = title;
-      // isLast = false;
       owner = { userId = currentOwner.userId; userName = currentOwner.userName };
-      nextOwner = { userId = "test"; userName = "test" };
+      nextOwner = { userId = nextOwner.userId; userName = nextOwner.userName };
       texts = List.nil<Text>();
       previousNodes = previousNodes;
     };
@@ -126,7 +144,7 @@ actor Main {
     Iter.toArray(suppliers.vals());
   };
 
-  let backendCallerId = "rrkah-fqaaa-aaaaa-aaaaq-cai";
+  let backendCallerId = "ryjl3-tyaaa-aaaaa-aaaba-cai";
 
   // Adds a new Supplier with to suppliers map with key = internet identity value = username
   // Only suppliers can add new suppliers. Exceptions for the first supplier added and the backend canister ID.
@@ -138,7 +156,7 @@ actor Main {
     // Exceptions for the first entry and if the caller is the backend canister.
     // Suppliers can only be added  by authorized users. Existing IDs may not be overwritten
     //FIXME overwrite protection doesnt work yet
-    if (suppliers.entries().next() == null or caller == backendCallerId or (suppliers.get(caller) != null and suppliers.get(supplier.userId) == null)) {
+    if ((suppliers.entries().next() == null or caller == backendCallerId or (suppliers.get(caller) != null) and suppliers.get(supplier.userId) == null)) {
       suppliers.put(supplier.userId, supplier.userName);
       return "supplier with ID:" #supplier.userId # " Name:" #supplier.userName # "added";
     };
