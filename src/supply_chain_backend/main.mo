@@ -140,11 +140,8 @@ actor Main {
     // Suppliers can only be added  by authorized users. Existing IDs may not be overwritten
 
     if ((suppliers.size() == 0 or suppliers.get(caller) != null) and suppliers.get(supplier.userId) == null) {
-
       suppliers.put(supplier.userId, supplier.userName);
-
       return "supplier with ID:" #supplier.userId # " Name:" #supplier.userName # " added";
-
     };
 
     return "Error: Request denied. Caller " #caller # " is not a supplier";
