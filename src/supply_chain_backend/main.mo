@@ -18,21 +18,6 @@ actor Main {
   };
   //Contains all registered suppliers
   var suppliers = Map.HashMap<Text, Text>(0, Text.equal, natHash);
-  // public func createRootNode(title : Text, currentOwnerId : Text) : async (Nat) {
-  //   // Map Ids in previousNodes to actual nodes, add them to childNodes if owner is authorized
-
-  //   //Create the new node with a list of child nodes and other metadata
-  //   let username = suppliers.get(currentOwnerId);
-  //   switch (username) {
-  //     case null { return 0 };
-  //     case (?username) {
-  //       let newNode = createNode(List.nil(), title, { userId = currentOwnerId; userName = username });
-
-  //       allNodes := List.push<T.Node>(newNode, allNodes);
-  //       nodeId;
-  //     };
-  //   };
-  // };
 
   //Creates a New node with n child nodes. Child nodes are given as a list of IDs in previousnodes.
   //CurrentOwner needs to be the same as "nextOwner" in the given childNodes to point to them.
@@ -49,13 +34,14 @@ actor Main {
         switch (username) {
           case null { return 0 };
           case (?username) {
-           
+
             if (previousNodes.size() == 0) {
               let newNode = createNode(List.nil(), title, { userId = currentOwnerId; userName = username }, { userId = nextOwnerId; userName = usernameNextOwner });
               allNodes := List.push<T.Node>(newNode, allNodes);
               nodeId;
             } else {
               // Map given Ids (previousNodes) to actual nodes, if they exist, they are added to childNodes
+              //TODO maybe abort creation if one or more are not found?
               var childNodes = List.filter<T.Node>(
                 allNodes,
                 func n {
@@ -144,21 +130,21 @@ actor Main {
     Iter.toArray(suppliers.vals());
   };
 
-  let backendCallerId = "ryjl3-tyaaa-aaaaa-aaaba-cai";
-
   // Adds a new Supplier with to suppliers map with key = internet identity value = username
   // Only suppliers can add new suppliers. Exceptions for the first supplier added and the backend canister ID.
   // TODO Only admins can add suppliers
   public shared (message) func addSupplier(supplier : T.Supplier) : async Text {
-    let caller = await getCaller();
+    let caller = Principal.toText(message.caller);
 
-    //FIXME CALLER==BACKENDCALLERID MIGHT BE SECURITY RISK. ONLY FOR TESTING
     // Exceptions for the first entry and if the caller is the backend canister.
     // Suppliers can only be added  by authorized users. Existing IDs may not be overwritten
-    //FIXME overwrite protection doesnt work yet
-    if ((suppliers.entries().next() == null or caller == backendCallerId or (suppliers.get(caller) != null) and suppliers.get(supplier.userId) == null)) {
+
+    if ((suppliers.size() == 0 or suppliers.get(caller) != null) and suppliers.get(supplier.userId) == null) {
+
       suppliers.put(supplier.userId, supplier.userName);
-      return "supplier with ID:" #supplier.userId # " Name:" #supplier.userName # "added";
+
+      return "supplier with ID:" #supplier.userId # " Name:" #supplier.userName # " added";
+
     };
 
     return "Error: Request denied. Caller " #caller # " is not a supplier";

@@ -28,10 +28,11 @@ class SupplyChain extends React.Component {
       userId: userID.value,
 
     }
-    this.state.actor.addSupplier(supplier);
+    let response = await this.state.actor.addSupplier(supplier);
 
     userName.value = "";
     userID.value = "";
+    document.getElementById("supplierResponse").innerText = response;
     // actor.addSupplier(ii, userName);
   }
 
@@ -47,28 +48,28 @@ class SupplyChain extends React.Component {
     title.value = "";
     children.value = "";
     nextOwnerID.value="";
-    let result = "";
+    let response = "";
     if (tValue.length > 0) {
       //Check if there are any child nodes. If not, the node is a "rootnode", which is a node without children
       let array = [];
       if (cValue.length == 0) {
-        result += await this.state.actor.createLeafNode([0],tValue, caller,nValue);
+        response += await this.state.actor.createLeafNode([0],tValue, caller,nValue);
       } else {
         //Split child node IDs by ","
         let numbers = cValue.split(',').map(function (item) {
           return parseInt(item, 10);
         });
-        result += await this.state.actor.createLeafNode(numbers, tValue, caller,nValue);
+        response += await this.state.actor.createLeafNode(numbers, tValue, caller,nValue);
       }
-      if(result === "0"){
+      if(response === "0"){
         if(caller==="2vxsx-fae"){
-          result ="Node was not created. Login to a supplier account to create nodes."
+          response ="Node was not created. Login to a supplier account to create nodes."
         }
-        result ="Node was not created. Account with id '"+caller+"' is not a supplier."
+        response ="Node was not created. Account with id '"+caller+"' is not a supplier."
       }else{
-        result = "Created Node with ID: "+ result;
+        response = "Created Node with ID: "+ response;
       }
-      document.getElementById("createResult").innerText = result;
+      document.getElementById("createResult").innerText = response;
     }
   }
 
@@ -124,6 +125,7 @@ class SupplyChain extends React.Component {
             </tbody>
           </table>
           <button onClick={() => this.addSupplier()}>Create Supplier</button>
+          <div id="supplierResponse"></div>
           <br></br>
         </div>
         <div>
