@@ -61,14 +61,11 @@ class SupplyChain extends React.Component {
         });
         response += await this.state.actor.createLeafNode(numbers, tValue, caller, nValue);
       }
-      if (response === "0") {
+     
         if (caller === "2vxsx-fae") {
           response = "Node was not created. Login to a supplier account to create nodes."
         }
-        response = "Node was not created. Account with id '" + caller + "' is not a supplier."
-      } else {
-        response = "Created Node with ID: " + response;
-      }
+        
       document.getElementById("createResult").innerText = response;
     }
   }
@@ -88,6 +85,7 @@ class SupplyChain extends React.Component {
 
     // At this point we're authenticated, and we can get the identity from the auth client:
     const identity = authClient.getIdentity();
+    
     console.log(identity);
     // Using the identity obtained from the auth client, we can create an agent to interact with the IC.
     const agent = new HttpAgent({ identity });

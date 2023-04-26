@@ -8,7 +8,10 @@ import Iter "mo:base/Iter";
 import Text "mo:base/Text";
 import List "mo:base/List";
 import Utils "utils";
+import Debug "mo:base/Debug";
+
 actor Main {
+
   //Learning: Cant return non-shared classes (aka mutable classes). Save mutable data to this actor instead of node?
   var allNodes = List.nil<T.Node>(); // make stable
 
@@ -21,47 +24,57 @@ actor Main {
 
   //Creates a New node with n child nodes. Child nodes are given as a list of IDs in previousnodes.
   //CurrentOwner needs to be the same as "nextOwner" in the given childNodes to point to them.
-  public func createLeafNode(previousNodes : [Nat], title : Text, currentOwnerId : Text, nextOwnerId : Text) : async (Nat) {
+  public func createLeafNode(previousNodes : [Nat], title : Text, currentOwnerId : Text, nextOwnerId : Text) : async (Text) {
 
     let username = suppliers.get(currentOwnerId);
     let usernameNextOwner = suppliers.get(nextOwnerId);
 
     //Check if  next owner is null
     switch (usernameNextOwner) {
-      case null { return 0 };
+      case null { return "Error: Next owner not found." };
       case (?usernameNextOwner) {
         //Check if  current owner is null
         switch (username) {
-          case null { return 0 };
+          case null { return "Error: Logged in Account not found." };
           case (?username) {
-
-            if (previousNodes.size() == 0) {
+            if (previousNodes[0] == 0) {
+              Debug.print("ZERO");
               let newNode = createNode(List.nil(), title, { userId = currentOwnerId; userName = username }, { userId = nextOwnerId; userName = usernameNextOwner });
               allNodes := List.push<T.Node>(newNode, allNodes);
-              nodeId;
+              "Created node with ID: "#Nat.toText(nodeId);
             } else {
               // Map given Ids (previousNodes) to actual nodes, if they exist, they are added to childNodes
               //TODO maybe abort creation if one or more are not found?
+              var c2=0;
               var childNodes = List.filter<T.Node>(
                 allNodes,
                 func n {
                   var containsN = false;
                   for (i in Array.vals(previousNodes)) {
                     //Check if the node exists and if the currentOwner was defined as the nextOwner
-                    if (n.nodeId == i and n.nextOwner.userId == currentOwnerId) {
+                    if (n.nodeId == i and n.nextOwner.userId == currentOwnerId and n.nodeId<=nodeId) {
                       // and n.nodeId!=nodeId+1
                       containsN := true;
+                      c2+=1;
                     };
                   };
+                  
                   containsN;
                 },
               );
-
+              var c1 = 0;
+               for (i in Array.vals(previousNodes)) {
+                  c1+=1;
+               };
+              
               //Create the new node with a list of child nodes and other metadata
-              let newNode = createNode(childNodes, title, { userId = currentOwnerId; userName = username }, { userId = nextOwnerId; userName = usernameNextOwner });
-
-              allNodes := List.push<T.Node>(newNode, allNodes);
-              nodeId;
+              if (c2==c1) {
+                let newNode = createNode(childNodes, title, { userId = currentOwnerId; userName = username }, { userId = nextOwnerId; userName = usernameNextOwner });
+                allNodes := List.push<T.Node>(newNode, allNodes);
+                 "Created node with ID: "#Nat.toText(nodeId);
+              } else {
+                return "Error: Some Child IDs were invalid or missing ownership.";
+              };
             };
           };
         };
