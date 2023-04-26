@@ -41,37 +41,40 @@ actor Main {
               Debug.print("ZERO");
               let newNode = createNode(List.nil(), title, { userId = currentOwnerId; userName = username }, { userId = nextOwnerId; userName = usernameNextOwner });
               allNodes := List.push<T.Node>(newNode, allNodes);
-              "Created node with ID: "#Nat.toText(nodeId);
+              "Created node with ID: " #Nat.toText(nodeId);
             } else {
               // Map given Ids (previousNodes) to actual nodes, if they exist, they are added to childNodes
               //TODO maybe abort creation if one or more are not found?
-              var c2=0;
+              //Counter to keep track of amount of added nodes
+              var c2 = 0;
               var childNodes = List.filter<T.Node>(
                 allNodes,
                 func n {
                   var containsN = false;
                   for (i in Array.vals(previousNodes)) {
                     //Check if the node exists and if the currentOwner was defined as the nextOwner
-                    if (n.nodeId == i and n.nextOwner.userId == currentOwnerId and n.nodeId<=nodeId) {
+                    if (n.nodeId == i and n.nextOwner.userId == currentOwnerId and n.nodeId <= nodeId) {
                       // and n.nodeId!=nodeId+1
                       containsN := true;
-                      c2+=1;
+                      c2 += 1;
                     };
                   };
-                  
+
                   containsN;
                 },
               );
+              //Counter for original amount of childnodes
               var c1 = 0;
-               for (i in Array.vals(previousNodes)) {
-                  c1+=1;
-               };
-              
-              //Create the new node with a list of child nodes and other metadata
-              if (c2==c1) {
+              for (i in Array.vals(previousNodes)) {
+                c1 += 1;
+              };
+
+              //Check if all nodes were found
+              if (c1 == c2) {
+                //Create the new node with a list of child nodes and other metadata
                 let newNode = createNode(childNodes, title, { userId = currentOwnerId; userName = username }, { userId = nextOwnerId; userName = usernameNextOwner });
                 allNodes := List.push<T.Node>(newNode, allNodes);
-                 "Created node with ID: "#Nat.toText(nodeId);
+                "Created node with ID: " #Nat.toText(nodeId);
               } else {
                 return "Error: Some Child IDs were invalid or missing ownership.";
               };
