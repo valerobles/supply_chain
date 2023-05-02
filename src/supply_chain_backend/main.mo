@@ -24,6 +24,7 @@ actor Main {
 
   //Creates a New node with n child nodes. Child nodes are given as a list of IDs in previousnodes.
   //CurrentOwner needs to be the same as "nextOwner" in the given childNodes to point to them.
+  //previousNodes: Array of all child nodes. If the first elementdfx is "0", the list is assumed to be empty.
   public func createLeafNode(previousNodes : [Nat], title : Text, currentOwnerId : Text, nextOwnerId : Text) : async (Text) {
 
     let username = suppliers.get(currentOwnerId);
