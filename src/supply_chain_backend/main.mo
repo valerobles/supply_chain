@@ -13,6 +13,9 @@ import HashMap "mo:base/HashMap";
 import Time "mo:base/Time";
 import Blob "mo:base/Blob";
 import Error "mo:base/Error";
+import Buffer "mo:base/Buffer";
+
+
 
 
 
@@ -286,44 +289,44 @@ actor Main {
         };
     };
 
-    public shared({caller}) func create_chunk(chunk: Types.Chunk) : async {
-        chunk_id : Nat
-    } {
+    // puts the given chunk in the chunks hashmap together with the created chunkID. It then returns the chunkID as a record for frontend
+    public func create_chunk(chunk: Types.Chunk) : async { chunk_id : Nat} {
         nextChunkID := nextChunkID + 1;
         chunks.put(nextChunkID, chunk);
 
         return {chunk_id = nextChunkID};
     };
 
-    public shared({caller}) func commit_batch(
-        {batch_name: Text; chunk_ids: [Nat]; content_type: Text;} : {
-            batch_name: Text;
-            content_type: Text;
-            chunk_ids: [Nat];
-        },) : async () {
-         var content_chunks : [[Nat8]] = [];
+// This method is to collect the chunks content that belong together and saves it in the assets hashmap under thet batch_name(file name)
+    public func commit_batch(
+        {batch_name: Text; chunk_ids: [Nat]; content_type: Text;}) : async () {
+         
+         let content_chunks = Buffer.Buffer<[Nat8]>(4);
 
          for (chunk_id in chunk_ids.vals()) {
             let chunk: ?Types.Chunk = chunks.get(chunk_id);
 
             switch (chunk) {
                 case (?{content}) {
-                    content_chunks := Array.append<[Nat8]>(content_chunks, [content]);
+                    content_chunks.add(content)
                      };
                 case null {
                 };
             };
          };
 
-         if (content_chunks.size() > 0) {
+           if(content_chunks.size() > 0) {
             var total_length = 0;
-            for (chunk in content_chunks.vals()) total_length += chunk.size();
 
-            assets.put(Text.concat("/assets/", batch_name), {
+            for (chunk in content_chunks.vals()) 
+              total_length += chunk.size();
+              let content_chunks_array = Buffer.toArray(content_chunks);
+
+               assets.put(Text.concat("/assets/", batch_name), {
                 content_type = content_type;
                 encoding = {
                     modified  = Time.now();
-                    content_chunks;
+                    content_chunks = content_chunks_array;
                     certified = false;
                     total_length
                 };
@@ -331,6 +334,4 @@ actor Main {
          };
     };
 };
-      
-
 

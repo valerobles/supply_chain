@@ -17,17 +17,17 @@ class SupplyChain extends React.Component {
     this.state = { actor: supply_chain_backend,file: null};
   }
 
-  async uploadChunk({batch_name, chunk}) {
-    return this.state.actor.create_chunk({
-      batch_name,
-      content: [...new Uint8Array(await chunk.arrayBuffer())]
-    });
-  }
+  async handleFileSelection(event) {
+    this.state.file = event.target.files[0];
+    console.log(this.state.file)
+ 
+ }
+
+ 
 
   async upload() {
-    console.log("here")
+
     const file = this.state.file;
-    console.log(this.state.file)
     console.log(file)
 
     if (!file) {
@@ -39,21 +39,28 @@ class SupplyChain extends React.Component {
 
     const batch_name = file.name;
     const promises = [];
-    const chunkSize = 1500000;
+    const chunkSize = 1500000; //Messages to canisters cannot be larger than 2MB. The chunks are of size 1.5MB
 
     for (let start = 0; start < file.size; start += chunkSize) {
-      const chunk = file.slice(start, start + chunkSize);
 
+      // Create a chunk from file in size defined in chunkSize
+      const chunk = file.slice(start, start + chunkSize); // returns a Blob obj
+      console.log(chunk);
+
+      // Fill array with the uploadChunkt function. The array be executed later
+      // "uploadChunk" takees the batch_name(file name) and the chunk
       promises.push(this.uploadChunk({
         batch_name,
         chunk
       }));
     }
 
+    // Executes the "uploadChunk" defined in the promises array. Returns the chunkIDs created in the backend
     const chunkIds = await Promise.all(promises);
 
     console.log(chunkIds);
 
+    //Finish upload by commiting file batch to be saved in backend canister
     await this.state.actor.commit_batch({
       batch_name,
       chunk_ids: chunkIds.map(({chunk_id}) => chunk_id),
@@ -62,7 +69,18 @@ class SupplyChain extends React.Component {
 
     console.log('uploaded');
 
+    // Once the files has been saved in the backend canister it can be loaded to be seen on the frontend
     this.loadImage(batch_name);
+  }
+
+  // Takes a record of batch_name and chunk
+  // calls the backend canister method "create_chunk"
+  //converts chunk of type Blob into a Uint8Array to send it to backend canister. Motoko reads it as [Nat8]
+  async uploadChunk({batch_name, chunk}) {
+    return this.state.actor.create_chunk({
+      batch_name,
+      content: [...new Uint8Array(await chunk.arrayBuffer())] 
+    });
   }
 
   loadImage(batch_name) {
@@ -70,8 +88,10 @@ class SupplyChain extends React.Component {
       return;
     }
 
+    
     const newImage = document.createElement('img');
-    newImage.src = `http://localhost:4943/assets/${batch_name}?canisterId=ryjl3-tyaaa-aaaaa-aaaba-cai`;
+    // do a GET request to the backend canister to recieve image
+    newImage.src = `http://localhost:4943/assets/${batch_name}?canisterId=ryjl3-tyaaa-aaaaa-aaaba-cai`; //backend canister ID
 
     const img = document.querySelector('section:last-of-type img');
     img?.parentElement.removeChild(img);
@@ -80,11 +100,7 @@ class SupplyChain extends React.Component {
     section?.appendChild(newImage);
   }
 
-   async handleInputChange(event) {
-     this.state.file = event.target.files[0];
-     console.log(this.state.file)
   
-  }
   
 
 
@@ -264,8 +280,9 @@ class SupplyChain extends React.Component {
         <h3>Upload file</h3>
         <section>
         <label for="image">Image:</label>
-        <input id="image" alt="image" onChange={(e) => this.handleInputChange(e)} type="file" accept="image/x-png,image/jpeg,image/gif,image/svg+xml,image/webp" />
+        <input id="image" alt="image" onChange={(e) => this.handleFileSelection(e)} type="file" accept="image/x-png,image/jpeg,image/gif,image/svg+xml,image/webp" />
         <button className="upload" onClick={() => this.upload()}>Upload</button>
+        <section></section>
       </section>
       </div>
     );
