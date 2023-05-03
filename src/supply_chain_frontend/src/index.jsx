@@ -3,6 +3,8 @@ import { AuthClient } from "@dfinity/auth-client"
 import { HttpAgent } from "@dfinity/agent";
 import * as React from 'react';
 import { render } from 'react-dom';
+import React, { useState } from 'react';
+
 
 
 
@@ -12,9 +14,88 @@ class SupplyChain extends React.Component {
 
   constructor(props) {
     super(props);
-    this.state = { actor: supply_chain_backend };
-
+    this.state = { actor: supply_chain_backend,file: null};
   }
+
+  async uploadChunk({batch_name, chunk}) {
+    return this.state.actor.create_chunk({
+      batch_name,
+      content: [...new Uint8Array(await chunk.arrayBuffer())]
+    });
+  }
+
+  async upload() {
+    console.log("here")
+    const file = this.state.file;
+    console.log(this.state.file)
+    console.log(file)
+
+    if (!file) {
+      alert('No file selected');
+      return;
+    }
+
+    console.log('start upload');
+
+    const batch_name = file.name;
+    const promises = [];
+    const chunkSize = 1500000;
+
+    for (let start = 0; start < file.size; start += chunkSize) {
+      const chunk = file.slice(start, start + chunkSize);
+
+      promises.push(this.uploadChunk({
+        batch_name,
+        chunk
+      }));
+    }
+
+    const chunkIds = await Promise.all(promises);
+
+    console.log(chunkIds);
+
+    await this.state.actor.commit_batch({
+      batch_name,
+      chunk_ids: chunkIds.map(({chunk_id}) => chunk_id),
+      content_type: file.type
+    })
+
+    console.log('uploaded');
+
+    this.loadImage(batch_name);
+  }
+
+  loadImage(batch_name) {
+    if (!batch_name) {
+      return;
+    }
+
+    const newImage = document.createElement('img');
+    newImage.src = `http://localhost:4943/assets/${batch_name}?canisterId=r7inp-6aaaa-aaaaa-aaabq-cai`;
+
+    const img = document.querySelector('section:last-of-type img');
+    img?.parentElement.removeChild(img);
+
+    const section = document.querySelector('section:last-of-type');
+    section?.appendChild(newImage);
+  }
+
+   async handleInputChange(event) {
+     console.log("handle")
+     console.log(event.target.files[0])
+     this.state.file = event.target.files[0];
+     console.log(this.state.file)
+    //   this.setState({
+    //   file: event.target.files[0],
+    // });
+  }
+  
+
+
+
+
+
+
 
   async getCaller() {
     document.getElementById("ii").value = this.state.actor.getCaller();
@@ -100,6 +181,8 @@ class SupplyChain extends React.Component {
 
   }
 
+  
+
   async getNodes() {
     let all = await this.state.actor.showAllNodes();
     document.getElementById("allNodes").innerHTML = all;
@@ -121,6 +204,13 @@ class SupplyChain extends React.Component {
       document.getElementById("treeResult").innerHTML = "Error: Invalid ID"
     }
   }
+// test() {
+//    input = document.querySelector('input');
+//    input?.addEventListener('change', ($event) => {
+//     file = $event.target.files?.[0];})
+   
+//  }
+
 
   render() {
     return (
@@ -175,9 +265,15 @@ class SupplyChain extends React.Component {
           <button onClick={() => this.getChildNodes()}>Show Child Nodes</button>
           <div id="treeResult"></div>
         </div>
+        <h3>Upload file</h3>
+        <section>
+        <label for="image">Image:</label>
+        <input id="image" alt="image" onChange={(e) => this.handleInputChange(e)} type="file" accept="image/x-png,image/jpeg,image/gif,image/svg+xml,image/webp" />
+        <button className="upload" onClick={() => this.upload()}>Upload</button>
+      </section>
       </div>
     );
   }
 }
 
-render(<SupplyChain />, document.getElementById('app'));
+render(<SupplyChain />, document.getElementById('create_node'));
