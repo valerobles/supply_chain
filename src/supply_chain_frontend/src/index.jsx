@@ -71,7 +71,7 @@ class SupplyChain extends React.Component {
     }
 
     const newImage = document.createElement('img');
-    newImage.src = `http://localhost:4943/assets/${batch_name}?canisterId=r7inp-6aaaa-aaaaa-aaabq-cai`;
+    newImage.src = `http://localhost:4943/assets/${batch_name}?canisterId=ryjl3-tyaaa-aaaaa-aaaba-cai`;
 
     const img = document.querySelector('section:last-of-type img');
     img?.parentElement.removeChild(img);
@@ -81,13 +81,9 @@ class SupplyChain extends React.Component {
   }
 
    async handleInputChange(event) {
-     console.log("handle")
-     console.log(event.target.files[0])
      this.state.file = event.target.files[0];
      console.log(this.state.file)
-    //   this.setState({
-    //   file: event.target.files[0],
-    // });
+  
   }
   
 
