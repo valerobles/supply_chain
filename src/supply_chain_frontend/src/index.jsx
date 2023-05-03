@@ -27,24 +27,27 @@ class SupplyChain extends React.Component {
 
   async upload() {
 
-    const file = this.state.file;
-    console.log(file)
-
-    if (!file) {
+    if (!this.state.file) {
       alert('No file selected');
       return;
     }
 
+    let newName = this.state.file.name.replace(/\s/g, ""); // remove whitespaces so no error occurs in the GET method URL
+    this.state.file = new File([this.state.file], newName, { type: this.state.file.type });
+    console.log(this.state.file);
+
+    
+
     console.log('start upload');
 
-    const batch_name = file.name;
+    const batch_name = this.state.file.name;
     const promises = [];
     const chunkSize = 1500000; //Messages to canisters cannot be larger than 2MB. The chunks are of size 1.5MB
 
-    for (let start = 0; start < file.size; start += chunkSize) {
+    for (let start = 0; start < this.state.file.size; start += chunkSize) {
 
       // Create a chunk from file in size defined in chunkSize
-      const chunk = file.slice(start, start + chunkSize); // returns a Blob obj
+      const chunk = this.state.file.slice(start, start + chunkSize); // returns a Blob obj
       console.log(chunk);
 
       // Fill array with the uploadChunkt function. The array be executed later
@@ -64,7 +67,7 @@ class SupplyChain extends React.Component {
     await this.state.actor.commit_batch({
       batch_name,
       chunk_ids: chunkIds.map(({chunk_id}) => chunk_id),
-      content_type: file.type
+      content_type: this.state.file.type
     })
 
     console.log('uploaded');
