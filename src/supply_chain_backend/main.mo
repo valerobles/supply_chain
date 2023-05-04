@@ -184,7 +184,8 @@ actor Main {
 
 
   // Chunking
-
+ // Upload and download code was taken by dfinity's example project and was adapted to this project
+// https://github.com/carstenjacobsen/examples/tree/master/motoko/fileupload
 
    private var nextChunkID: Nat = 0;
 

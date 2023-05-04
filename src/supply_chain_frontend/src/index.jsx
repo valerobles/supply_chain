@@ -17,100 +17,6 @@ class SupplyChain extends React.Component {
     this.state = { actor: supply_chain_backend,file: null};
   }
 
-  async handleFileSelection(event) {
-    this.state.file = event.target.files[0];
-    console.log(this.state.file)
- 
- }
-
- 
-
-  async upload() {
-
-    if (!this.state.file) {
-      alert('No file selected');
-      return;
-    }
-
-    let newName = this.state.file.name.replace(/\s/g, ""); // remove whitespaces so no error occurs in the GET method URL
-    this.state.file = new File([this.state.file], newName, { type: this.state.file.type });
-    console.log(this.state.file);
-
-    
-
-    console.log('start upload');
-
-    const batch_name = this.state.file.name;
-    const promises = [];
-    const chunkSize = 1500000; //Messages to canisters cannot be larger than 2MB. The chunks are of size 1.5MB
-
-    for (let start = 0; start < this.state.file.size; start += chunkSize) {
-
-      // Create a chunk from file in size defined in chunkSize
-      const chunk = this.state.file.slice(start, start + chunkSize); // returns a Blob obj
-      console.log(chunk);
-
-      // Fill array with the uploadChunkt function. The array be executed later
-      // "uploadChunk" takees the batch_name(file name) and the chunk
-      promises.push(this.uploadChunk({
-        batch_name,
-        chunk
-      }));
-    }
-
-    // Executes the "uploadChunk" defined in the promises array. Returns the chunkIDs created in the backend
-    const chunkIds = await Promise.all(promises);
-
-    console.log(chunkIds);
-
-    //Finish upload by commiting file batch to be saved in backend canister
-    await this.state.actor.commit_batch({
-      batch_name,
-      chunk_ids: chunkIds.map(({chunk_id}) => chunk_id),
-      content_type: this.state.file.type
-    })
-
-    console.log('uploaded');
-
-    // Once the files has been saved in the backend canister it can be loaded to be seen on the frontend
-    this.loadImage(batch_name);
-  }
-
-  // Takes a record of batch_name and chunk
-  // calls the backend canister method "create_chunk"
-  //converts chunk of type Blob into a Uint8Array to send it to backend canister. Motoko reads it as [Nat8]
-  async uploadChunk({batch_name, chunk}) {
-    return this.state.actor.create_chunk({
-      batch_name,
-      content: [...new Uint8Array(await chunk.arrayBuffer())] 
-    });
-  }
-
-  loadImage(batch_name) {
-    if (!batch_name) {
-      return;
-    }
-
-    
-    const newImage = document.createElement('img');
-    // do a GET request to the backend canister to recieve image
-    newImage.src = `http://localhost:4943/assets/${batch_name}?canisterId=ryjl3-tyaaa-aaaaa-aaaba-cai`; //backend canister ID
-
-    const img = document.querySelector('section:last-of-type img');
-    img?.parentElement.removeChild(img);
-
-    const section = document.querySelector('section:last-of-type');
-    section?.appendChild(newImage);
-  }
-
-  
-  
-
-
-
-
-
-
 
   async getCaller() {
     document.getElementById("ii").value = this.state.actor.getCaller();
@@ -226,6 +132,105 @@ class SupplyChain extends React.Component {
    
 //  }
 
+
+
+
+ // Upload and download code was taken by dfinity's example project and was adapted to this project
+// https://github.com/carstenjacobsen/examples/tree/master/motoko/fileupload
+  async handleFileSelection(event) {
+    this.state.file = event.target.files[0];
+    console.log(this.state.file)
+ 
+ }
+
+  async upload() {
+
+    if (!this.state.file) {
+      alert('No file selected');
+      return;
+    }
+
+    let newName = this.state.file.name.replace(/\s/g, ""); // remove whitespaces so no error occurs in the GET method URL
+    this.state.file = new File([this.state.file], newName, { type: this.state.file.type });
+    console.log(this.state.file);
+
+    
+
+    console.log('start upload');
+
+    const batch_name = this.state.file.name;
+    const promises = [];
+    const chunkSize = 1500000; //Messages to canisters cannot be larger than 2MB. The chunks are of size 1.5MB
+
+    for (let start = 0; start < this.state.file.size; start += chunkSize) {
+
+      // Create a chunk from file in size defined in chunkSize
+      const chunk = this.state.file.slice(start, start + chunkSize); // returns a Blob obj
+      console.log(chunk);
+
+      // Fill array with the uploadChunkt function. The array be executed later
+      // "uploadChunk" takees the batch_name(file name) and the chunk
+      promises.push(this.uploadChunk({
+        batch_name,
+        chunk
+      }));
+    }
+
+    // Executes the "uploadChunk" defined in the promises array. Returns the chunkIDs created in the backend
+    const chunkIds = await Promise.all(promises);
+
+    console.log(chunkIds);
+
+    //Finish upload by commiting file batch to be saved in backend canister
+    await this.state.actor.commit_batch({
+      batch_name,
+      chunk_ids: chunkIds.map(({chunk_id}) => chunk_id),
+      content_type: this.state.file.type
+    })
+
+    console.log('uploaded');
+
+    // Once the files has been saved in the backend canister it can be loaded to be seen on the frontend
+    this.loadImage(batch_name);
+  }
+
+  // Takes a record of batch_name and chunk
+  // calls the backend canister method "create_chunk"
+  //converts chunk of type Blob into a Uint8Array to send it to backend canister. Motoko reads it as [Nat8]
+  async uploadChunk({batch_name, chunk}) {
+    return this.state.actor.create_chunk({
+      batch_name,
+      content: [...new Uint8Array(await chunk.arrayBuffer())] 
+    });
+  }
+
+  loadImage(batch_name) {
+    if (!batch_name) {
+      return;
+    }
+
+    
+    const newImage = document.createElement('img');
+    // do a GET request to the backend canister to recieve image
+    newImage.src = `http://localhost:4943/assets/${batch_name}?canisterId=ryjl3-tyaaa-aaaaa-aaaba-cai`; //backend canister ID
+
+    const img = document.querySelector('section:last-of-type img');
+    img?.parentElement.removeChild(img);
+
+    const section = document.querySelector('section:last-of-type');
+    section?.appendChild(newImage);
+  }
+
+  
+  
+
+
+
+
+
+
+
+  
 
   render() {
     return (
