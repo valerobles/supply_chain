@@ -189,6 +189,25 @@ actor Main {
   };
 
 
+  public query func getDraftsBySupplier(supplier: Types.Supplier): async Text{
+       var output = "";
+       var draftList = supplierToDraftNodeID.get(supplier.userId);
+
+        switch (draftList) {
+          case null {
+            return "no draft found under this supplier";
+        }; case (?draftList) {
+            List.iterate<DraftNode.DraftNode>(draftList, func d { output := output # "\nID: " #Nat.toText(d.id) # " Title: " #d.title  # " Owner: " #d.owner.userId  # " Label: " #(d.labelToText[0].0) });
+          
+        };
+          
+
+        };
+        output;
+
+  };
+
+
 
   //Recursive function to append all child nodes of a given Node by ID.
   //Returns dependency structure as a text
