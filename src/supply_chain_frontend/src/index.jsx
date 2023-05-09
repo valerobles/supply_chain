@@ -204,6 +204,8 @@ class SupplyChain extends React.Component {
     });
   }
 
+  
+
   loadImage(batch_name) {
     if (!batch_name) {
       return;

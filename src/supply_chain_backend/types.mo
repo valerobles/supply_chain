@@ -3,7 +3,7 @@ import L "mo:base/List";
 module {
 public type Supplier = {
   userName : Text;
-  userId : Text;
+  userId : Text; // TODO: change to type Principal?
 };
  public type Node = {
  
@@ -17,6 +17,11 @@ public type Supplier = {
   texts : L.List<Text>;
   previousNodes : L.List<Node>;
 };
+
+   public type SupplierToDraftNodeID = {
+       supplierID : Text; 
+       draftNodeID: Nat
+       };
 
    public type HeaderField = (Text, Text);
 

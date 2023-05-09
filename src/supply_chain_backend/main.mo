@@ -14,6 +14,7 @@ import Time "mo:base/Time";
 import Blob "mo:base/Blob";
 import Error "mo:base/Error";
 import Buffer "mo:base/Buffer";
+import DraftNode "draftNode";
 
 
 
@@ -27,12 +28,17 @@ actor Main {
   //Learning: Cant return non-shared classes (aka mutable classes). Save mutable data to this actor instead of node?
   var allNodes = List.nil<Types.Node>(); // make stable
 
+  
+
   var nodeId : Nat = 0; // make stable
   func natHash(n : Text) : Hash.Hash {
     Text.hash(n);
   };
   //Contains all registered suppliers
   var suppliers = Map.HashMap<Text, Text>(0, Text.equal, natHash);
+
+// Contains all the drafts of each Supplier. Mapping from Supplier Id to a List of all Drafts
+  var supplierToDraftNodeID = HashMap.HashMap<Text, List.List<DraftNode.DraftNode>>(0, Text.equal, natHash);
 
   //Creates a New node with n child nodes. Child nodes are given as a list of IDs in previousnodes.
   //CurrentOwner needs to be the same as "nextOwner" in the given childNodes to point to them.
@@ -111,6 +117,27 @@ actor Main {
       texts = List.nil<Text>();
       previousNodes = previousNodes;
     };
+  };
+
+
+  // Creates a DraftNode object. It takes nodeId and the owner.
+  // with the created DraftNode object, it is added to the supplierToDraftNodeID Hashmap as a List
+  // that manages the supplier to all of their drafts
+  public func createDraftNode (id: Nat, owner: Types.Supplier) {
+    let node = DraftNode.DraftNode(id,owner);
+    let nodeTemp = supplierToDraftNodeID.get(owner.userId);
+    var tempList = List.nil<DraftNode.DraftNode>();
+
+    switch (nodeTemp) {
+      case null {
+      };
+      case (?nodeTemp) {
+      tempList := nodeTemp; 
+      };
+    };
+     tempList := List.push<DraftNode.DraftNode>(node, tempList);
+     supplierToDraftNodeID.put(owner.userId, tempList);
+  
   };
 
   //returns all Nodes corresponding to their owner by Id
@@ -197,7 +224,7 @@ actor Main {
     );
 
     // hashmap of collection of chunks belonging to a file.
-    // key: batch_name e.g. "/assets/fileName.png"
+    // key: batch_name e.g. "nodeID/assets/fileName.png"
     // value: collection of chunks belonging together (type Asset)
      private let assets: HashMap.HashMap<Text, Types.Asset> = HashMap.HashMap<Text, Types.Asset>(
         0, Text.equal, Text.hash,
@@ -218,7 +245,7 @@ actor Main {
     public func commit_batch(
         {batch_name: Text; chunk_ids: [Nat]; content_type: Text;}) : async () {
          
-         let content_chunks = Buffer.Buffer<[Nat8]>(4);
+         let content_chunks = Buffer.Buffer<[Nat8]>(4); //mutable array
 
          for (chunk_id in chunk_ids.vals()) {
             let chunk: ?Types.Chunk = chunks.get(chunk_id);
