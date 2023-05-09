@@ -5,22 +5,25 @@ import Text "mo:base/Text";
 import List "mo:base/List";
 
 
-class DraftNode(id_: Nat, owner_ : Types.Supplier) {
+class DraftNode(id_: Nat, owner_ : Types.Supplier, title_ : Text) {
 
 
     func natHash(n : Text) : Hash.Hash {
         Text.hash(n);
   };
 
-    public var id = id_;
-    public var owner = owner_;
-    public let title: Text = "";
-    public let nextOwner: Types.Supplier = {userName = ""; userId = ""};
-    public let labelToText = HashMap.HashMap<Text, Text>(0, Text.equal, natHash);
+    public let id = id_;
+    public let owner = owner_;
+    public let title: Text = title_;
 
-    public let previousNodesIDs = List.nil<Nat>();
+    public var nextOwner: Types.Supplier = {userName = ""; userId = ""};
+    public var labelToText : [(Text,Text)] = [("","")];
 
-    public let assetKeys = List.nil<Text>();
+    public var previousNodesIDs: [Nat] = [];
+
+    public var assetKeys : [Text] = [];
+
+
 
 
 }

@@ -123,8 +123,8 @@ actor Main {
   // Creates a DraftNode object. It takes nodeId and the owner.
   // with the created DraftNode object, it is added to the supplierToDraftNodeID Hashmap as a List
   // that manages the supplier to all of their drafts
-  public func createDraftNode (id: Nat, owner: Types.Supplier) {
-    let node = DraftNode.DraftNode(id,owner);
+  public func createDraftNode (id: Nat, owner: Types.Supplier, title : Text) {
+    let node = DraftNode.DraftNode(id,owner, title);
     let nodeTemp = supplierToDraftNodeID.get(owner.userId);
     var tempList = List.nil<DraftNode.DraftNode>();
 
@@ -147,6 +147,48 @@ actor Main {
   public query func showAllNodes() : async Text {
     Utils.nodeListToText(allNodes);
   };
+
+
+
+  public shared(message) func saveToDraft(nodeId: Nat,nextOwner: Types.Supplier, labelToText: [(Text,Text)], previousNodes: [Nat], assetKeys: [Text] ) : async (Text) {
+    let ownerId = Principal.toText(message.caller);
+   // assert not Principal.isAnonymous(message.caller); 
+    assert not (suppliers.get(ownerId) == null);
+    var draftList = supplierToDraftNodeID.get(ownerId);
+
+    switch (draftList) {
+      case null {
+        return "no draft found under this supplier";
+    }; case (?draftList) {
+
+        let draftTemp = List.find<DraftNode.DraftNode> (
+          draftList,
+            func draft {
+              nodeId == draft.id;
+            }
+        );
+
+        switch (draftTemp) {
+          case null {
+            return "no draft node found under given ID";
+          };
+          case (?draftTemp) {
+            draftTemp.nextOwner := nextOwner;
+            draftTemp.labelToText := labelToText;
+            draftTemp.previousNodesIDs := previousNodes;
+            draftTemp.assetKeys := assetKeys;
+            return " Draft successfully saved";
+          };
+        };        
+        
+        
+    };
+    };
+      return "Something went wrong";
+
+  };
+
+
 
   //Recursive function to append all child nodes of a given Node by ID.
   //Returns dependency structure as a text
@@ -207,6 +249,8 @@ actor Main {
   public query (message) func getCaller() : async Text {
     return Principal.toText(message.caller);
   };
+
+
 
 
 
