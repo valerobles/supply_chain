@@ -14,7 +14,12 @@ class SupplyChain extends React.Component {
 
   constructor(props) {
     super(props);
-    this.state = { actor: supply_chain_backend, file: null, formFields: [{ label: '', text: '' }], drafts: [{ id: '', title: '' }] };
+    this.state = {
+      actor: supply_chain_backend,
+      file: null, formFields: [{ label: '', text: '' }],
+      drafts: [{ id: '', title: '' }],
+      currentDraft: { id: 0, title: '', nextOwner: { userName: '', userId: '' }, labelToText: [{ label: '', text: '' }], previousNodesIDs: [0], file: null }
+    };
   }
 
   handleAddField = () => {
@@ -28,7 +33,7 @@ class SupplyChain extends React.Component {
     newFormFields.splice(index, 1);
     this.setState({ formFields: newFormFields });
   };
-
+  //TODO change to handle current draft in state
   handleFieldChange = (index, fieldName, event) => {
     const { formFields } = this.state;
     const newFormFields = [...formFields];
@@ -133,7 +138,7 @@ class SupplyChain extends React.Component {
 
     });
     this.setState({ drafts: tempDrafts });
-    console.log(tempDrafts);
+
   }
   async login() {
 
@@ -191,12 +196,6 @@ class SupplyChain extends React.Component {
       document.getElementById("treeResult").innerHTML = "Error: Invalid ID"
     }
   }
-  // test() {
-  //    input = document.querySelector('input');
-  //    input?.addEventListener('change', ($event) => {
-  //     file = $event.target.files?.[0];})
-
-  //  }
 
 
 
@@ -288,9 +287,65 @@ class SupplyChain extends React.Component {
     const section = document.querySelector('section:last-of-type');
     section?.appendChild(newImage);
   }
+  // currentDraft: { id: 0, title: '', nextOwner: { userName: '', userId: '' }, labelToText: [{ label: '', text: '' }], previousNodesIDs: [0], file: null }
 
+  async setCurrentDraft(id) {
+    let draft = await this.state.actor.getDraftById(id);
+    const { currentDraft } = this.state;
+    currentDraft.id = Number(draft[0]);
+    currentDraft.title = draft[1];
+    currentDraft.nextOwner = draft[2];
+    currentDraft.labelToText = draft[3];
+    currentDraft.previousNodesIDs = draft[4];
+    //currentDraft.file=draft[0];
+    this.setState({ currentDraft: currentDraft });
 
+  }
+  showDraft() {
+    const tmpDraft = this.state.currentDraft;
+    console.log(tmpDraft.labelToText);
+    return (<div><h1>Complete Draft</h1>
+      <table>
+        <tbody>
+          <tr>
+            <td>Next Owner ID:</td><td><input value={tmpDraft.nextOwner.userId} onChange={(event) => { }} required id="newNodeNextOwner"></input></td>
+            <td>Child nodes:</td><td><input value={tmpDraft.previousNodesIDs} onChange={(event) => { }} id="newNodeChildren" placeholder="1,2,..."></input></td>
+          </tr>
+        </tbody>
+      </table>
+      <div>
 
+        {(tmpDraft.labelToText).map((field, index) => (
+          <div key={index}>
+            <input
+              type="text"
+              value={field[0]}
+              onChange={(event) => this.handleFieldChange(index, 'label', event)}
+            />
+            <input
+              type="text"
+              value={field[1]}
+              onChange={(event) => this.handleFieldChange(index, 'text', event)}
+            />
+            {index > 0 && (
+              <button type="button" onClick={() => this.handleRemoveField(index)}>
+                Remove Field
+              </button>
+            )}
+          </div>
+        ))}
+        <button type="button" onClick={() => this.handleAddField()}>
+          Add Field
+        </button>
+        <button type="button" onClick={() => this.printForm()}>
+          Save
+        </button>
+        <button type="button" onClick={() => this.printForm()}>
+          Finalize
+        </button>
+
+      </div></div>)
+  }
 
 
   render() {
@@ -315,12 +370,15 @@ class SupplyChain extends React.Component {
           <button onClick={() => this.addSupplier()}>Create Supplier</button>
           <div id="supplierResponse"></div>
           <br></br>
+          <button type="button" onClick={() => this.getDraftBySupplier()}>
+            Get drafts by supplier
+          </button>
         </div>
         {drafts.map((draft, index) => (
           <div key={index}>
             <label>{draft.title}</label>
             {(
-              <button type="button" onClick={() => { }}>
+              <button type="button" onClick={() => this.setCurrentDraft(draft.id)}>
                 Edit draft
               </button>
             )}
@@ -363,50 +421,7 @@ class SupplyChain extends React.Component {
           <button className="upload" onClick={() => this.upload()}>Upload</button>
           <section></section>
         </section>
-        <h1>Complete Draft</h1>
-        <table>
-          <tbody>
-            <tr>
-              <td>Next Owner ID:</td><td><input required id="newNodeNextOwner"></input></td>
-              <td>Child nodes:</td><td><input id="newNodeChildren" placeholder="1,2,..."></input></td>
-            </tr>
-          </tbody>
-        </table>
-        <div>
-
-
-          {formFields.map((field, index) => (
-            <div key={index}>
-              <input
-                type="text"
-                value={field.label}
-                onChange={(event) => this.handleFieldChange(index, 'label', event)}
-              />
-              <input
-                type="text"
-                value={field.text}
-                onChange={(event) => this.handleFieldChange(index, 'text', event)}
-              />
-              {index > 0 && (
-                <button type="button" onClick={() => this.handleRemoveField(index)}>
-                  Remove Field
-                </button>
-              )}
-            </div>
-          ))}
-          <button type="button" onClick={() => this.handleAddField()}>
-            Add Field
-          </button>
-          <button type="button" onClick={() => this.printForm()}>
-            Save
-          </button>
-          <button type="button" onClick={() => this.printForm()}>
-            Finalize
-          </button>
-          <button type="button" onClick={() => this.getDraftBySupplier()}>
-            Get drafts by supplier
-          </button>
-        </div>
+        <div>{this.showDraft()}</div>
       </div>
     );
   }

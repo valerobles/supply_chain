@@ -34,7 +34,7 @@ actor Main {
   //Creates a New node with n child nodes. Child nodes are given as a list of IDs in previousnodes.
   //CurrentOwner needs to be the same as "nextOwner" in the given childNodes to point to them.
   //previousNodes: Array of all child nodes. If the first elementdfx is "0", the list is assumed to be empty.
-  public func createLeafNode(id:Nat,previousNodes : [Nat], title : Text, currentOwnerId : Text, nextOwnerId : Text) : async (Text) {
+  public func createLeafNode(id : Nat, previousNodes : [Nat], title : Text, currentOwnerId : Text, nextOwnerId : Text) : async (Text) {
 
     let username = suppliers.get(currentOwnerId);
     let usernameNextOwner = suppliers.get(nextOwnerId);
@@ -49,7 +49,7 @@ actor Main {
           case (?username) {
             if (previousNodes[0] == 0) {
               Debug.print("ZERO");
-              let newNode = createNode(id,List.nil(), title, { userId = currentOwnerId; userName = username }, { userId = nextOwnerId; userName = usernameNextOwner });
+              let newNode = createNode(id, List.nil(), title, { userId = currentOwnerId; userName = username }, { userId = nextOwnerId; userName = usernameNextOwner });
               allNodes := List.push<Types.Node>(newNode, allNodes);
               "Created node with ID: " #Nat.toText(nodeId);
             } else {
@@ -82,7 +82,7 @@ actor Main {
               //Check if all nodes were found
               if (c1 == c2) {
                 //Create the new node with a list of child nodes and other metadata
-                let newNode = createNode(id,childNodes, title, { userId = currentOwnerId; userName = username }, { userId = nextOwnerId; userName = usernameNextOwner });
+                let newNode = createNode(id, childNodes, title, { userId = currentOwnerId; userName = username }, { userId = nextOwnerId; userName = usernameNextOwner });
                 allNodes := List.push<Types.Node>(newNode, allNodes);
                 "Created node with ID: " #Nat.toText(nodeId);
               } else {
@@ -130,11 +130,11 @@ actor Main {
         let nodeListDrafts = supplierToDraftNodeID.get(ownerId);
         var tempList = List.nil<DraftNode.DraftNode>();
 
-        switch  (nodeListDrafts) {
+        switch (nodeListDrafts) {
           case null {
-            
-        };
-          case ( ?nodeListDrafts) {
+
+          };
+          case (?nodeListDrafts) {
             tempList := nodeListDrafts;
           };
         };
@@ -192,13 +192,13 @@ actor Main {
 
   };
 
-public query(message) func getDraftsBySupplier() : async [(Nat, Text)] {
-  let ownerId = Principal.toText(message.caller);
+  public query (message) func getDraftsBySupplier() : async [(Nat, Text)] {
+    let ownerId = Principal.toText(message.caller);
     var draftList = supplierToDraftNodeID.get(ownerId);
     let listOfDraft = Buffer.Buffer<(Nat, Text)>(1);
     switch (draftList) {
       case null {
-       // listOfDraft.add((0, ""));
+        // listOfDraft.add((0, ""));
       };
       case (?draftList) {
         List.iterate<DraftNode.DraftNode>(draftList, func d { listOfDraft.add((d.id, d.title)) });
@@ -206,8 +206,28 @@ public query(message) func getDraftsBySupplier() : async [(Nat, Text)] {
       };
 
     };
-    let a =  Buffer.toArray(listOfDraft);
-    return a;
+    return Buffer.toArray(listOfDraft);
+  };
+  public query (message) func getDraftById(id : Nat) : async (Nat, Text, Types.Supplier, [(Text, Text)], [Nat]) {
+    let ownerId = Principal.toText(message.caller);
+    var draftList = supplierToDraftNodeID.get(ownerId);
+    let emptyDraft =   (0, "", {userName = ""; userId = ""}, [("", "",)], [0]);
+    switch (draftList) {
+      case null {
+       return emptyDraft;
+      };
+      case (?draftList) {
+        let d = List.find<DraftNode.DraftNode>(draftList, func draft { draft.id == id });
+        switch (d) {
+          case null {};
+          case (?d) {
+           return (d.id,d.title,d.nextOwner,d.labelToText,d.previousNodesIDs);
+          };
+        };
+      };
+
+    };
+    return emptyDraft;
   };
 
   //Recursive function to append all child nodes of a given Node by ID.
@@ -405,7 +425,7 @@ public query(message) func getDraftsBySupplier() : async [(Nat, Text)] {
           http_request_streaming_callback : shared () -> async ();
         }; // create actor reference
 
-        return ?#Callback({
+        return ? #Callback({
           token;
           callback = canister.http_request_streaming_callback;
 
