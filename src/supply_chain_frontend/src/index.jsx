@@ -345,12 +345,14 @@ class SupplyChain extends React.Component {
           <section></section>
         </section>
         <h1>Complete Draft</h1>
+        <table>
         <tbody>
             <tr>
               <td>Next Owner ID:</td><td><input required id="newNodeNextOwner"></input></td>
               <td>Child nodes:</td><td><input id="newNodeChildren" placeholder="1,2,..."></input></td>
             </tr>
           </tbody>
+          </table>
         <div>
     
         
@@ -373,16 +375,16 @@ class SupplyChain extends React.Component {
               )}
             </div>
           ))}
-          <button type="button" onClick={this.handleAddField}>
+          <button type="button" onClick={()=>this.handleAddField()}>
             Add Field
           </button>
-          <button type="button" onClick={this.printForm}>
+          <button type="button" onClick={()=>this.printForm()}>
             Save
           </button>
-          <button type="button" onClick={this.printForm}>
+          <button type="button" onClick={()=>this.printForm()}>
             Finalize
           </button>
-          <button type="button" onClick={this.getDraftBySupplier}>
+          <button type="button" onClick={()=>this.getDraftBySupplier()}>
             Get drafts by supplier
           </button>
         </div>
