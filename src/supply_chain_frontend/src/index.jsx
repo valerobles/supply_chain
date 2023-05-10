@@ -14,7 +14,7 @@ class SupplyChain extends React.Component {
 
   constructor(props) {
     super(props);
-    this.state = { actor: supply_chain_backend, file: null, formFields: [{ label: '', text: '' }] };
+    this.state = { actor: supply_chain_backend, file: null, formFields: [{ label: '', text: '' }], drafts: [{ id: '', title: '' }] };
   }
 
   handleAddField = () => {
@@ -124,7 +124,17 @@ class SupplyChain extends React.Component {
     document.getElementById("createResult").innerText = response;
   }
 
+  async getDraftBySupplier() {
+    let result = await this.state.actor.getDraftsBySupplier();
 
+    let tempDrafts = [];
+    result.forEach((d) => {
+      tempDrafts = [...tempDrafts, { id: Number(d[0]), title: d[1] }]
+
+    });
+    this.setState({ drafts: tempDrafts });
+    console.log(tempDrafts);
+  }
   async login() {
 
 
@@ -151,18 +161,12 @@ class SupplyChain extends React.Component {
     const greeting = await this.state.actor.greet();
     document.getElementById("greeting").innerText = greeting;
 
+    this.getDraftBySupplier();
     return false;
 
   }
 
-  async getDraftBySupplier() {
-    let result = await this.state.actor.getDraftsBySupplier();
-    let idFirst = Number(result[0][0]);
-    let titleFirst = result[0][1];
 
-    console.log(idFirst)
-    console.log(titleFirst)
-  }
 
 
 
@@ -291,6 +295,7 @@ class SupplyChain extends React.Component {
 
   render() {
     const { formFields } = this.state;
+    const { drafts } = this.state;
     return (
       <div>
         <h1>Supply Chain</h1>
@@ -311,6 +316,16 @@ class SupplyChain extends React.Component {
           <div id="supplierResponse"></div>
           <br></br>
         </div>
+        {drafts.map((draft, index) => (
+          <div key={index}>
+            <label>{draft.title}</label>
+            {(
+              <button type="button" onClick={() => { }}>
+                Edit draft
+              </button>
+            )}
+          </div>
+        ))}
         <div>
           <h3>Create Draft node:</h3>
           <table>
@@ -350,16 +365,16 @@ class SupplyChain extends React.Component {
         </section>
         <h1>Complete Draft</h1>
         <table>
-        <tbody>
+          <tbody>
             <tr>
               <td>Next Owner ID:</td><td><input required id="newNodeNextOwner"></input></td>
               <td>Child nodes:</td><td><input id="newNodeChildren" placeholder="1,2,..."></input></td>
             </tr>
           </tbody>
-          </table>
+        </table>
         <div>
-    
-        
+
+
           {formFields.map((field, index) => (
             <div key={index}>
               <input
@@ -379,16 +394,16 @@ class SupplyChain extends React.Component {
               )}
             </div>
           ))}
-          <button type="button" onClick={()=>this.handleAddField()}>
+          <button type="button" onClick={() => this.handleAddField()}>
             Add Field
           </button>
-          <button type="button" onClick={()=>this.printForm()}>
+          <button type="button" onClick={() => this.printForm()}>
             Save
           </button>
-          <button type="button" onClick={()=>this.printForm()}>
+          <button type="button" onClick={() => this.printForm()}>
             Finalize
           </button>
-          <button type="button" onClick={()=>this.getDraftBySupplier()}>
+          <button type="button" onClick={() => this.getDraftBySupplier()}>
             Get drafts by supplier
           </button>
         </div>
