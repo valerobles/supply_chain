@@ -192,25 +192,22 @@ actor Main {
 
   };
 
-  public query (message) func getDraftsBySupplier() : async [Text] {
-    let ownerId = Principal.toText(message.caller);
-
-    var output = "";
+public query(message) func getDraftsBySupplier() : async [(Nat, Text)] {
+  let ownerId = Principal.toText(message.caller);
     var draftList = supplierToDraftNodeID.get(ownerId);
-    let listOfDraft = Buffer.Buffer< Text>(1);
+    let listOfDraft = Buffer.Buffer<(Nat, Text)>(1);
     switch (draftList) {
       case null {
-        listOfDraft.add("");
+       // listOfDraft.add((0, ""));
       };
       case (?draftList) {
-        List.iterate<DraftNode.DraftNode>(draftList, func d { listOfDraft.add(d.title) });
+        List.iterate<DraftNode.DraftNode>(draftList, func d { listOfDraft.add((d.id, d.title)) });
 
       };
 
     };
-    
-    (Buffer.toArray(listOfDraft));
-    
+    let a =  Buffer.toArray(listOfDraft);
+    return a;
   };
 
   //Recursive function to append all child nodes of a given Node by ID.

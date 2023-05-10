@@ -156,8 +156,12 @@ class SupplyChain extends React.Component {
   }
 
   async getDraftBySupplier() {
-    let result = await this.state.actor.getDraftsBySupplier()
-    console.log(result)
+    let result = await this.state.actor.getDraftsBySupplier();
+    let idFirst = Number(result[0][0]);
+    let titleFirst = result[0][1];
+
+    console.log(idFirst)
+    console.log(titleFirst)
   }
 
 
