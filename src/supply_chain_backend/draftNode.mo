@@ -19,7 +19,7 @@ class DraftNode(id_: Nat, owner_ : Types.Supplier, title_ : Text) {
     public var nextOwner: Types.Supplier = {userName = "luca"; userId = "89"};
     public var labelToText : [(Text,Text)] = [("Testtitle","mytext"), ("testing", "tuples")];
 
-    public var previousNodesIDs: [Nat] = [1,2,3];
+    public var previousNodesIDs: [Nat] = [0];
 
     //e.g. id/assets/fileName.png
     public var assetKeys : [Text] = [];

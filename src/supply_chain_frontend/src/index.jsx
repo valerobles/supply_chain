@@ -28,7 +28,7 @@ class SupplyChain extends React.Component {
       }
     };
   }
-  
+
 
   handleAddField = () => {
     const { labelToText } = this.state.currentDraft;
@@ -40,7 +40,7 @@ class SupplyChain extends React.Component {
       }
     });
   };
-  
+
 
   handleRemoveField = (index) => {
     const { labelToText } = this.state.currentDraft;
@@ -80,38 +80,42 @@ class SupplyChain extends React.Component {
   };
 
   handleChildNodesChange = (event) => {
-    const newChildNodes = event.target.value;
+    const newChildNodesS = event.target.value;
+    let newChildNodes = newChildNodesS.split(',').map(function (item) {
+      return parseInt(item, 10);
+    });
     this.setState({
       currentDraft: {
         ...this.state.currentDraft,
         previousNodesIDs: newChildNodes
-      
+
       }
     });
   };
-  
-  
 
-  printDraftForm () {
+
+
+  async printDraftForm() {
     console.log(this.state.currentDraft)
+    let response = await this.state.actor.createLeafNode(this.state.currentDraft.id);
+    document.getElementById("createResult").innerText = response;
   }
 
   async saveDraft() {
-    
-    if(this.state.file) {
+
+    if (this.state.file) {
       await this.upload();
     }
-        
-    const {currentDraft} = this.state;
+
+    const { currentDraft } = this.state;
 
     //console.log("After upload")
     //console.log(currentDraft)
 
-  
     // Construct Arguments to send to backend canister
     const currentD = [
       BigInt(currentDraft.id),
-      {userName: currentDraft.nextOwner.userName, userId: currentDraft.nextOwner.userId}, 
+      { userName: currentDraft.nextOwner.userName, userId: currentDraft.nextOwner.userId },
       currentDraft.labelToText.map(({ label, text }) => [label, text]),
       currentDraft.previousNodesIDs,
       currentDraft.draftFile,
@@ -119,7 +123,7 @@ class SupplyChain extends React.Component {
 
     let response = await this.state.actor.saveToDraft(...currentD);
     alert(response);
-  } 
+  }
 
 
 
@@ -140,36 +144,35 @@ class SupplyChain extends React.Component {
 
     userName.value = "";
     userID.value = "";
-    document.getElementById("supplierResponse").innerText = response;
+    alert(response)
+   // document.getElementById("supplierResponse").innerText = response;
     // actor.addSupplier(ii, userName);
   }
 
   async createNode() {
     const caller = await this.state.actor.getCaller();
 
-    let title = document.getElementById("newNodeTitle");
-    let nextOwnerID = document.getElementById("newNodeNextOwner");
-    let children = document.getElementById("newNodeChildren");
-    const tValue = title.value;
-    const cValue = children.value;
-    const nValue = nextOwnerID.value;
-    title.value = "";
-    children.value = "";
-    nextOwnerID.value = "";
-    let response = "";
-    if (tValue.length > 0) {
-      //Check if there are any child nodes. If not, the node is a "rootnode", which is a node without children
-      let array = [];
-      if (cValue.length == 0) {
-        //response += await this.state.actor.createDraftNode([0], tValue, caller, nValue);
+    // let title = document.getElementById("newNodeTitle");
+    // let nextOwnerID = document.getElementById("newNodeNextOwner");
+    // let children = document.getElementById("newNodeChildren");
 
-        response += await this.state.actor.createLeafNode([0], tValue, caller, nValue);
+    const title = this.state.currentDraft;
+    const children = children.value;
+    const nextOwner = nextOwnerID.value;
+    // title.value = "";
+    // children.value = "";
+    // nextOwnerID.value = "";
+    let response = "";
+    if (title.length > 0) {
+      //Check if there are any child nodes. If not, the node is a "rootnode", which is a node without children
+      if (children.length == 0) {
+        response += await this.state.actor.createLeafNode([0], title, caller, nextOwner);
       } else {
         //Split child node IDs by ","
-        let numbers = cValue.split(',').map(function (item) {
+        let numbers = children.split(',').map(function (item) {
           return parseInt(item, 10);
         });
-        response += await this.state.actor.createLeafNode(numbers, tValue, caller, nValue);
+        response += await this.state.actor.createLeafNode(numbers, title, caller, nextOwner);
       }
 
       if (caller === "2vxsx-fae") {
@@ -290,7 +293,7 @@ class SupplyChain extends React.Component {
       return;
     }
 
-    const {currentDraft} = this.state;
+    const { currentDraft } = this.state;
 
     let newName = this.state.file.name.replace(/\s/g, ""); // remove whitespaces so no error occurs in the GET method URL
     this.state.file = new File([this.state.file], newName, { type: this.state.file.type });
@@ -335,7 +338,7 @@ class SupplyChain extends React.Component {
 
     console.log('uploaded');
 
-    const assetKey = [...currentDraft.draftFile, "/"+currentDraft.id+"/assets/"+batch_name]
+    const assetKey = [...currentDraft.draftFile, "/" + currentDraft.id + "/assets/" + batch_name]
     this.setState({
       currentDraft: {
         ...this.state.currentDraft,
@@ -361,26 +364,28 @@ class SupplyChain extends React.Component {
 
 
   loadImage(files) {
-      if (!files) {
-        return;
-      }
+    if (!files) {
+      return;
+    }
 
 
-      const section = document.querySelector('section:last-of-type');
+    const section = document.querySelector('section:last-of-type');
 
-      // Create a document fragment to hold the image tags
-      const fragment = document.createDocumentFragment();
+    // Create a document fragment to hold the image tags
+    const fragment = document.createDocumentFragment();
 
-      // Iterate over the image sources and create image tags
-      files.forEach((src) => {
-        const img = document.createElement('img');
-        console.log(src);
-        img.src = `http://localhost:4943${src}?canisterId=ryjl3-tyaaa-aaaaa-aaaba-cai`;
-        fragment.appendChild(img);
-      });
+    // Iterate over the image sources and create image tags
+    files.forEach((src) => {
+      const img = document.createElement('img');
+      img.width = 300;
+      img.height = 200;
+      console.log(src);
+      img.src = `http://localhost:4943${src}?canisterId=ryjl3-tyaaa-aaaaa-aaaba-cai`;
+      fragment.appendChild(img);
+    });
 
-      // Append the fragment to the section element
-      section?.appendChild(fragment); 
+    // Append the fragment to the section element
+    section?.appendChild(fragment);
   }
 
   async setCurrentDraft(id) {
@@ -395,63 +400,63 @@ class SupplyChain extends React.Component {
       text
     }));
     currentDraft.previousNodesIDs = draft[4];
-    currentDraft.draftFile=draft[5];
+    currentDraft.draftFile = draft[5];
     this.setState({ currentDraft: currentDraft });
 
     this.loadImage(currentDraft.draftFile);
 
   }
   showDraft() {
-    
+
     const tmpDraft = this.state.currentDraft;
-    
+
     if (tmpDraft.id != 0) {
       return (<div><h1>Complete "{tmpDraft.title}" Draft</h1>
-      <table>
-        <tbody>
-          <tr>
-            <td>Next Owner ID:</td><td><input value={tmpDraft.nextOwner.userId} onChange={(event) => this.handleNextOwnerChange(event)}></input></td>
-            <td>Child nodes:</td><td><input value={tmpDraft.previousNodesIDs} onChange={(event) => this.handleChildNodesChange(event)} placeholder="1,2,..."></input></td>
-          </tr>
-        </tbody>
-      </table>
-      <div>
-    
-              {(tmpDraft.labelToText || []).map((field, index) => (
-                <div key={index}>
-                  <input
-                    type="text"
-                    value={field.label}
-                    onChange={(event) => this.handleFieldChange(index, 'label', event)}
-                  />
-                  <input
-                    type="text"
-                    value={field.text}
-                    onChange={(event) => this.handleFieldChange(index, 'text', event)}
-                  />
+        <table>
+          <tbody>
+            <tr>
+              <td>Next Owner ID:</td><td><input value={tmpDraft.nextOwner.userId} onChange={(event) => this.handleNextOwnerChange(event)}></input></td>
+              <td>Child nodes:</td><td><input value={tmpDraft.previousNodesIDs} onChange={(event) => this.handleChildNodesChange(event)} placeholder="1,2,..."></input></td>
+            </tr>
+          </tbody>
+        </table>
+        <div>
 
-                {(
-                  <button type="button" onClick={() => this.handleRemoveField(index)}>
-                    Remove Field
-                  </button>
-                )}
-                </div>
-               
-              ))}
-        <button type="button" onClick={() => this.handleAddField()}>
-          Add Field
-        </button>
+          {(tmpDraft.labelToText || []).map((field, index) => (
+            <div key={index}>
+              <input
+                type="text"
+                value={field.label}
+                onChange={(event) => this.handleFieldChange(index, 'label', event)}
+              />
+              <input
+                type="text"
+                value={field.text}
+                onChange={(event) => this.handleFieldChange(index, 'text', event)}
+              />
+
+              {(
+                <button type="button" onClick={() => this.handleRemoveField(index)}>
+                  Remove Field
+                </button>
+              )}
+            </div>
+
+          ))}
+          <button type="button" onClick={() => this.handleAddField()}>
+            Add Field
+          </button>
 
 
-      </div>
-      <h4>Upload file</h4>
+        </div>
+        <h4>Upload file</h4>
         <section>
           <label for="image">Image:</label>
           <input id="image" alt="image" onChange={(e) => this.handleFileSelection(e)} type="file" accept="image/x-png,image/jpeg,image/gif,image/svg+xml,image/webp" />
           {/* <button className="upload" onClick={() => this.upload()}>Upload</button> */}
           <section></section>
         </section>
-      
+
         <button type="button" onClick={() => this.saveDraft()}>
           Save
         </button>
@@ -460,7 +465,7 @@ class SupplyChain extends React.Component {
         </button>
       </div>)
     }
-   
+
   }
 
 
@@ -476,7 +481,7 @@ class SupplyChain extends React.Component {
           <table>
             <tbody>
               <tr>
-          
+
                 <td>user id:</td><td><input required id="newSupplierID"></input></td>
                 <td>username :</td><td><input required id="newSupplierName"></input></td>
               </tr>
@@ -484,6 +489,11 @@ class SupplyChain extends React.Component {
           </table>
           <button onClick={() => this.addSupplier()}>Create Supplier</button>
           <div id="supplierResponse"></div>
+          <br></br>
+        <button onClick={() => this.getNodes()}>Get all nodes</button>
+        <div id="allNodes"></div>
+        <button onClick={() => this.getSuppliers()}>Get all suppliers</button>
+        <div id="suppliers"></div>
           <br></br>
           <button type="button" onClick={() => this.getDraftBySupplier()}>
             Get drafts by supplier
@@ -499,7 +509,7 @@ class SupplyChain extends React.Component {
             )}
           </div>
         ))}
-        <div> 
+        <div>
           <h3>Create Draft node:</h3>
           <table>
             <tbody>
@@ -511,11 +521,7 @@ class SupplyChain extends React.Component {
           <button onClick={() => this.createDraftNode()}>Create Draft Node</button>
           <div id="createResult"></div>
         </div>
-        <br></br>
-        <button onClick={() => this.getNodes()}>Get all nodes</button>
-        <div id="allNodes"></div>
-        <button onClick={() => this.getSuppliers()}>Get all suppliers</button>
-        <div id="suppliers"></div>
+        
         <br></br>
         <div>
           <h3> Get Chain by last node ID</h3>

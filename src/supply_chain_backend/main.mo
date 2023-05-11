@@ -31,13 +31,26 @@ actor Main {
   // Contains all the drafts of each Supplier. Mapping from Supplier Id to a List of all Drafts
   var supplierToDraftNodeID = HashMap.HashMap<Text, List.List<DraftNode.DraftNode>>(0, Text.equal, natHash);
 
+  private func removeDraft(id : Nat, caller : Text) {
+    let drafts = supplierToDraftNodeID.get(caller);
+    switch (drafts) {
+      case null {};
+      case (?drafts) {
+        let newList = List.filter<DraftNode.DraftNode>(drafts, func n { not (n.id == id) });
+        supplierToDraftNodeID.put(caller, newList);
+      };
+    };
+
+  };
   //Creates a New node with n child nodes. Child nodes are given as a list of IDs in previousnodes.
   //CurrentOwner needs to be the same as "nextOwner" in the given childNodes to point to them.
   //previousNodes: Array of all child nodes. If the first elementdfx is "0", the list is assumed to be empty.
-  public func createLeafNode(id : Nat, previousNodes : [Nat], title : Text, currentOwnerId : Text, nextOwnerId : Text) : async (Text) {
-
-    let username = suppliers.get(currentOwnerId);
-    let usernameNextOwner = suppliers.get(nextOwnerId);
+  public shared (message) func createLeafNode(draftId : Nat) : async (Text) {
+    let caller = Principal.toText(message.caller);
+    let draft = getDraftByIdAsObject(draftId, caller);
+    let owner = draft.owner;
+    let username = suppliers.get(draft.owner.userId);
+    let usernameNextOwner = suppliers.get(draft.nextOwner.userId);
 
     //Check if  next owner is null
     switch (usernameNextOwner) {
@@ -47,11 +60,12 @@ actor Main {
         switch (username) {
           case null { return "Error: Logged in Account not found." };
           case (?username) {
-            if (previousNodes[0] == 0) {
+            if (draft.previousNodesIDs[0] == 0) {
               Debug.print("ZERO");
-              let newNode = createNode(id, List.nil(), title, { userId = currentOwnerId; userName = username }, { userId = nextOwnerId; userName = usernameNextOwner });
+              let newNode = createNode(draft.id, List.nil(), draft.title, draft.owner, draft.nextOwner);
               allNodes := List.push<Types.Node>(newNode, allNodes);
-              "Created node with ID: " #Nat.toText(nodeId);
+              removeDraft(draft.id, caller);
+              "Finalized node with ID: " #Nat.toText(nodeId);
             } else {
               // Map given Ids (previousNodes) to actual nodes, if they exist, they are added to childNodes
               //TODO maybe abort creation if one or more are not found?
@@ -61,9 +75,9 @@ actor Main {
                 allNodes,
                 func n {
                   var containsN = false;
-                  for (i in Array.vals(previousNodes)) {
+                  for (i in Array.vals(draft.previousNodesIDs)) {
                     //Check if the node exists and if the currentOwner was defined as the nextOwner
-                    if (n.nodeId == i and n.nextOwner.userId == currentOwnerId and n.nodeId <= nodeId) {
+                    if (n.nodeId == i and n.nextOwner.userId == draft.owner.userId and n.nodeId <= nodeId) {
                       // and n.nodeId!=nodeId+1
                       containsN := true;
                       c2 += 1;
@@ -75,16 +89,17 @@ actor Main {
               );
               //Counter for original amount of childnodes
               var c1 = 0;
-              for (i in Array.vals(previousNodes)) {
+              for (i in Array.vals(draft.previousNodesIDs)) {
                 c1 += 1;
               };
 
               //Check if all nodes were found
               if (c1 == c2) {
                 //Create the new node with a list of child nodes and other metadata
-                let newNode = createNode(id, childNodes, title, { userId = currentOwnerId; userName = username }, { userId = nextOwnerId; userName = usernameNextOwner });
+                let newNode = createNode(draft.id, childNodes, draft.title, draft.owner, draft.nextOwner);
                 allNodes := List.push<Types.Node>(newNode, allNodes);
-                "Created node with ID: " #Nat.toText(nodeId);
+                removeDraft(draft.id, caller);
+                "Finalized node with ID: " #Nat.toText(nodeId);
               } else {
                 return "Error: Some Child IDs were invalid or missing ownership.";
               };
@@ -211,17 +226,38 @@ actor Main {
   public query (message) func getDraftById(id : Nat) : async (Nat, Text, Types.Supplier, [(Text, Text)], [Nat], [Text]) {
     let ownerId = Principal.toText(message.caller);
     var draftList = supplierToDraftNodeID.get(ownerId);
-    let emptyDraft =   (0, "", {userName = ""; userId = ""}, [("", "",)], [0],[""]);
+    let emptyDraft = (0, "", { userName = ""; userId = "" }, [("", "")], [0], [""]);
     switch (draftList) {
       case null {
-       return emptyDraft;
+        return emptyDraft;
       };
       case (?draftList) {
         let d = List.find<DraftNode.DraftNode>(draftList, func draft { draft.id == id });
         switch (d) {
           case null {};
           case (?d) {
-           return (d.id,d.title,d.nextOwner,d.labelToText,d.previousNodesIDs,d.assetKeys);
+            return (d.id, d.title, d.nextOwner, d.labelToText, d.previousNodesIDs, d.assetKeys);
+          };
+        };
+      };
+
+    };
+    return emptyDraft;
+  };
+  private func getDraftByIdAsObject(id : Nat, ownerId : Text) : DraftNode.DraftNode {
+
+    var draftList = supplierToDraftNodeID.get(ownerId);
+    let emptyDraft = DraftNode.DraftNode(0, { userName = ""; userId = "" }, "");
+    switch (draftList) {
+      case null {
+        return emptyDraft;
+      };
+      case (?draftList) {
+        let d = List.find<DraftNode.DraftNode>(draftList, func draft { draft.id == id });
+        switch (d) {
+          case null {};
+          case (?d) {
+            return d;
           };
         };
       };
@@ -279,7 +315,7 @@ actor Main {
 
     if ((suppliers.size() == 0 or suppliers.get(caller) != null) and suppliers.get(supplier.userId) == null) {
       suppliers.put(supplier.userId, supplier.userName);
-      return "supplier with ID:" #supplier.userId # " Name:" #supplier.userName # " added";
+      return "supplier added with\nID: " #supplier.userId # "\nName: " #supplier.userName;
     };
 
     return "Error: Request denied. Caller " #caller # " is not a supplier";
@@ -362,9 +398,7 @@ actor Main {
         },
       );
 
-
     };
-
 
   };
 
