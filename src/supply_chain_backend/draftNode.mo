@@ -17,7 +17,7 @@ class DraftNode(id_: Nat, owner_ : Types.Supplier, title_ : Text) {
     public let title: Text = title_;
 
     public var nextOwner: Types.Supplier = {userName = "luca"; userId = "89"};
-    public var labelToText : [(Text,Text)] = [("Testtitle","mytext")];
+    public var labelToText : [(Text,Text)] = [("Testtitle","mytext"), ("testing", "tuples")];
 
     public var previousNodesIDs: [Nat] = [1,2,3];
 

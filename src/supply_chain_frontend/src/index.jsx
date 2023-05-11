@@ -16,34 +16,59 @@ class SupplyChain extends React.Component {
     super(props);
     this.state = {
       actor: supply_chain_backend,
-      file: null, formFields: [{ label: '', text: '' }],
+      file: null,
       drafts: [{ id: '', title: '' }],
-      currentDraft: { id: 0, title: '', nextOwner: { userName: '', userId: '' }, labelToText: [{ label: '', text: '' }], previousNodesIDs: [0], file: null }
+      currentDraft: {
+        id: 0,
+        title: '',
+        nextOwner: { userName: '', userId: '' },
+        labelToText: [{ label: '', text: '' }],
+        previousNodesIDs: [0],
+        draftFile: null
+      }
     };
   }
+  
 
   handleAddField = () => {
-    const { formFields } = this.state;
-    this.setState({ formFields: [...formFields, { label: '', text: '' }] });
+    const { labelToText } = this.state.currentDraft;
+    const newLabelToText = [...labelToText, { label: '', text: '' }];
+    this.setState({
+      currentDraft: {
+        ...this.state.currentDraft,
+        labelToText: newLabelToText
+      }
+    });
   };
+  
 
   handleRemoveField = (index) => {
-    const { formFields } = this.state;
-    const newFormFields = [...formFields];
-    newFormFields.splice(index, 1);
-    this.setState({ formFields: newFormFields });
+    const { labelToText } = this.state.currentDraft;
+    const newLabelToText = [...labelToText];
+    newLabelToText.splice(index, 1);
+    this.setState({
+      currentDraft: {
+        ...this.state.currentDraft,
+        labelToText: newLabelToText
+      }
+    });
   };
   //TODO change to handle current draft in state
   handleFieldChange = (index, fieldName, event) => {
-    const { formFields } = this.state;
-    const newFormFields = [...formFields];
-    newFormFields[index][fieldName] = event.target.value;
-    this.setState({ formFields: newFormFields });
-
+    const { labelToText } = this.state.currentDraft;
+    const newLabelToText = [...labelToText];
+    newLabelToText[index][fieldName] = event.target.value;
+    this.setState({
+      currentDraft: {
+        ...this.state.currentDraft,
+        labelToText: newLabelToText
+      }
+    });
   };
+  
 
-  printForm = () => {
-    console.log(this.state.formFields)
+  printDraftForm = () => {
+    console.log(this.state.currentDraft)
   }
 
 
@@ -291,20 +316,24 @@ class SupplyChain extends React.Component {
 
   async setCurrentDraft(id) {
     let draft = await this.state.actor.getDraftById(id);
+    console.log(draft);
     const { currentDraft } = this.state;
     currentDraft.id = Number(draft[0]);
     currentDraft.title = draft[1];
     currentDraft.nextOwner = draft[2];
-    currentDraft.labelToText = draft[3];
+    currentDraft.labelToText = draft[3].map(([label, text]) => ({
+      label,
+      text
+    }));
     currentDraft.previousNodesIDs = draft[4];
-    //currentDraft.file=draft[0];
+    //currentDraft.draftFile=draft[0];
     this.setState({ currentDraft: currentDraft });
 
   }
   showDraft() {
     const tmpDraft = this.state.currentDraft;
-    console.log(tmpDraft.labelToText);
-    return (<div><h1>Complete Draft</h1>
+    if (tmpDraft.id != 0) {
+      return (<div><h1>Complete "{tmpDraft.title}" Draft</h1>
       <table>
         <tbody>
           <tr>
@@ -314,42 +343,48 @@ class SupplyChain extends React.Component {
         </tbody>
       </table>
       <div>
+    
+              {(tmpDraft.labelToText || []).map((field, index) => (
+                <div key={index}>
+                  <input
+                    type="text"
+                    value={field.label}
+                    onChange={(event) => this.handleFieldChange(index, 'label', event)}
+                  />
+                  <input
+                    type="text"
+                    value={field.text}
+                    onChange={(event) => this.handleFieldChange(index, 'text', event)}
+                  />
 
-        {(tmpDraft.labelToText).map((field, index) => (
-          <div key={index}>
-            <input
-              type="text"
-              value={field[0]}
-              onChange={(event) => this.handleFieldChange(index, 'label', event)}
-            />
-            <input
-              type="text"
-              value={field[1]}
-              onChange={(event) => this.handleFieldChange(index, 'text', event)}
-            />
-            {index > 0 && (
-              <button type="button" onClick={() => this.handleRemoveField(index)}>
-                Remove Field
-              </button>
-            )}
-          </div>
-        ))}
+                {(
+                  <button type="button" onClick={() => this.handleRemoveField(index)}>
+                    Remove Field
+                  </button>
+                )}
+                </div>
+               
+              ))}
+              <button type="button" onClick={() => this.handleAddField()}>
+                Add Field
+            </button>
         <button type="button" onClick={() => this.handleAddField()}>
           Add Field
         </button>
-        <button type="button" onClick={() => this.printForm()}>
+        <button type="button" onClick={() => this.printDraftForm()}>
           Save
         </button>
-        <button type="button" onClick={() => this.printForm()}>
+        <button type="button" onClick={() => this.printDraftForm()}>
           Finalize
         </button>
 
       </div></div>)
+    }
+   
   }
 
 
   render() {
-    const { formFields } = this.state;
     const { drafts } = this.state;
     return (
       <div>
@@ -361,7 +396,7 @@ class SupplyChain extends React.Component {
           <table>
             <tbody>
               <tr>
-                {/* <tr><td>user id:</td><td id="ii"></td></tr> */}
+          
                 <td>user id:</td><td><input required id="newSupplierID"></input></td>
                 <td>username :</td><td><input required id="newSupplierName"></input></td>
               </tr>
@@ -384,7 +419,7 @@ class SupplyChain extends React.Component {
             )}
           </div>
         ))}
-        <div>
+        <div> 
           <h3>Create Draft node:</h3>
           <table>
             <tbody>
