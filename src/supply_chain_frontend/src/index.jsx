@@ -92,9 +92,25 @@ class SupplyChain extends React.Component {
   
   
 
-  printDraftForm = () => {
+  printDraftForm () {
     console.log(this.state.currentDraft)
   }
+
+  async saveDraft() {
+    const {currentDraft} = this.state;
+    const currentD = [
+      BigInt(currentDraft.id),
+      {userName: currentDraft.nextOwner.userName, userId: currentDraft.nextOwner.userId}, 
+      currentDraft.labelToText.map(({ label, text }) => [label, text]),
+      currentDraft.previousNodesIDs,
+      ['0,0,0']
+    ];
+
+    let response = await this.state.actor.saveToDraft(...currentD);
+    alert(response);
+      //{ 'Types.Supplier': currentDraft.nextOwner }
+      //{userName: currentDraft.nextOwner.userName, userId: currentDraft.nextOwner.userId},
+  } 
 
 
 
@@ -395,7 +411,7 @@ class SupplyChain extends React.Component {
         <button type="button" onClick={() => this.handleAddField()}>
           Add Field
         </button>
-        <button type="button" onClick={() => this.printDraftForm()}>
+        <button type="button" onClick={() => this.saveDraft()}>
           Save
         </button>
         <button type="button" onClick={() => this.printDraftForm()}>
