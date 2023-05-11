@@ -24,7 +24,7 @@ class SupplyChain extends React.Component {
         nextOwner: { userName: '', userId: '' },
         labelToText: [{ label: '', text: '' }],
         previousNodesIDs: [0],
-        draftFile: null
+        draftFile: [""]
       }
     };
   }
@@ -97,19 +97,28 @@ class SupplyChain extends React.Component {
   }
 
   async saveDraft() {
+    
+    if(this.state.file) {
+      await this.upload();
+    }
+        
     const {currentDraft} = this.state;
+
+    //console.log("After upload")
+    //console.log(currentDraft)
+
+  
+    // Construct Arguments to send to backend canister
     const currentD = [
       BigInt(currentDraft.id),
       {userName: currentDraft.nextOwner.userName, userId: currentDraft.nextOwner.userId}, 
       currentDraft.labelToText.map(({ label, text }) => [label, text]),
       currentDraft.previousNodesIDs,
-      ['0,0,0']
+      currentDraft.draftFile,
     ];
 
     let response = await this.state.actor.saveToDraft(...currentD);
     alert(response);
-      //{ 'Types.Supplier': currentDraft.nextOwner }
-      //{userName: currentDraft.nextOwner.userName, userId: currentDraft.nextOwner.userId},
   } 
 
 
@@ -281,6 +290,8 @@ class SupplyChain extends React.Component {
       return;
     }
 
+    const {currentDraft} = this.state;
+
     let newName = this.state.file.name.replace(/\s/g, ""); // remove whitespaces so no error occurs in the GET method URL
     this.state.file = new File([this.state.file], newName, { type: this.state.file.type });
     console.log(this.state.file);
@@ -312,8 +323,11 @@ class SupplyChain extends React.Component {
 
     console.log(chunkIds);
 
-    //Finish upload by commiting file batch to be saved in backend canister
+    const node_id = BigInt(currentDraft.id)
+
+    //Finish upload by commiting file batch to be saved in backend canister with the current node ID
     await this.state.actor.commit_batch({
+      node_id,
       batch_name,
       chunk_ids: chunkIds.map(({ chunk_id }) => chunk_id),
       content_type: this.state.file.type
@@ -321,8 +335,17 @@ class SupplyChain extends React.Component {
 
     console.log('uploaded');
 
+    const assetKey = [...currentDraft.draftFile, "/"+currentDraft.id+"/assets/"+batch_name]
+    this.setState({
+      currentDraft: {
+        ...this.state.currentDraft,
+        draftFile: assetKey
+      }
+    });
+
+
     // Once the files has been saved in the backend canister it can be loaded to be seen on the frontend
-    this.loadImage(batch_name);
+    this.loadImage(currentDraft.draftFile);
   }
 
   // Takes a record of batch_name and chunk
@@ -337,21 +360,27 @@ class SupplyChain extends React.Component {
 
 
 
-  loadImage(batch_name) {
-    if (!batch_name) {
-      return;
-    }
+  loadImage(files) {
+      if (!files) {
+        return;
+      }
 
 
-    const newImage = document.createElement('img');
-    // do a GET request to the backend canister to recieve image
-    newImage.src = `http://localhost:4943/assets/${batch_name}?canisterId=ryjl3-tyaaa-aaaaa-aaaba-cai`; //backend canister ID
+      const section = document.querySelector('section:last-of-type');
 
-    const img = document.querySelector('section:last-of-type img');
-    img?.parentElement.removeChild(img);
+      // Create a document fragment to hold the image tags
+      const fragment = document.createDocumentFragment();
 
-    const section = document.querySelector('section:last-of-type');
-    section?.appendChild(newImage);
+      // Iterate over the image sources and create image tags
+      files.forEach((src) => {
+        const img = document.createElement('img');
+        console.log(src);
+        img.src = `http://localhost:4943${src}?canisterId=ryjl3-tyaaa-aaaaa-aaaba-cai`;
+        fragment.appendChild(img);
+      });
+
+      // Append the fragment to the section element
+      section?.appendChild(fragment); 
   }
 
   async setCurrentDraft(id) {
@@ -366,12 +395,16 @@ class SupplyChain extends React.Component {
       text
     }));
     currentDraft.previousNodesIDs = draft[4];
-    //currentDraft.draftFile=draft[0];
+    currentDraft.draftFile=draft[5];
     this.setState({ currentDraft: currentDraft });
+
+    this.loadImage(currentDraft.draftFile);
 
   }
   showDraft() {
+    
     const tmpDraft = this.state.currentDraft;
+    
     if (tmpDraft.id != 0) {
       return (<div><h1>Complete "{tmpDraft.title}" Draft</h1>
       <table>
@@ -405,20 +438,27 @@ class SupplyChain extends React.Component {
                 </div>
                
               ))}
-              <button type="button" onClick={() => this.handleAddField()}>
-                Add Field
-            </button>
         <button type="button" onClick={() => this.handleAddField()}>
           Add Field
         </button>
+
+
+      </div>
+      <h4>Upload file</h4>
+        <section>
+          <label for="image">Image:</label>
+          <input id="image" alt="image" onChange={(e) => this.handleFileSelection(e)} type="file" accept="image/x-png,image/jpeg,image/gif,image/svg+xml,image/webp" />
+          {/* <button className="upload" onClick={() => this.upload()}>Upload</button> */}
+          <section></section>
+        </section>
+      
         <button type="button" onClick={() => this.saveDraft()}>
           Save
         </button>
         <button type="button" onClick={() => this.printDraftForm()}>
           Finalize
         </button>
-
-      </div></div>)
+      </div>)
     }
    
   }
@@ -489,13 +529,6 @@ class SupplyChain extends React.Component {
           <button onClick={() => this.getChildNodes()}>Show Child Nodes</button>
           <div id="treeResult"></div>
         </div>
-        <h3>Upload file</h3>
-        <section>
-          <label for="image">Image:</label>
-          <input id="image" alt="image" onChange={(e) => this.handleFileSelection(e)} type="file" accept="image/x-png,image/jpeg,image/gif,image/svg+xml,image/webp" />
-          <button className="upload" onClick={() => this.upload()}>Upload</button>
-          <section></section>
-        </section>
         <div>{this.showDraft()}</div>
       </div>
     );

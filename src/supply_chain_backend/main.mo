@@ -208,10 +208,10 @@ actor Main {
     };
     return Buffer.toArray(listOfDraft);
   };
-  public query (message) func getDraftById(id : Nat) : async (Nat, Text, Types.Supplier, [(Text, Text)], [Nat]) {
+  public query (message) func getDraftById(id : Nat) : async (Nat, Text, Types.Supplier, [(Text, Text)], [Nat], [Text]) {
     let ownerId = Principal.toText(message.caller);
     var draftList = supplierToDraftNodeID.get(ownerId);
-    let emptyDraft =   (0, "", {userName = ""; userId = ""}, [("", "",)], [0]);
+    let emptyDraft =   (0, "", {userName = ""; userId = ""}, [("", "",)], [0],[""]);
     switch (draftList) {
       case null {
        return emptyDraft;
@@ -221,7 +221,7 @@ actor Main {
         switch (d) {
           case null {};
           case (?d) {
-           return (d.id,d.title,d.nextOwner,d.labelToText,d.previousNodesIDs);
+           return (d.id,d.title,d.nextOwner,d.labelToText,d.previousNodesIDs,d.assetKeys);
           };
         };
       };
@@ -323,6 +323,7 @@ actor Main {
 
   // This method is to collect the chunks content that belong together and saves it in the assets hashmap under thet batch_name(file name)
   public func commit_batch({
+    node_id : Nat;
     batch_name : Text;
     chunk_ids : [Nat];
     content_type : Text;
@@ -347,9 +348,9 @@ actor Main {
       for (chunk in content_chunks.vals()) total_length += chunk.size();
       let content_chunks_array = Buffer.toArray(content_chunks);
 
-      // assets hashmap takes as a key "assets/fileNameExample.png"
+      // assets hashmap takes as a key "nodeId/assets/fileNameExample.png"
       assets.put(
-        Text.concat("/assets/", batch_name),
+        "/" # Nat.toText(node_id) # "/assets/" # batch_name,
         {
           content_type = content_type;
           encoding = {
@@ -360,7 +361,11 @@ actor Main {
           };
         },
       );
+
+
     };
+
+
   };
 
   // handle GET requests for Files/Images
