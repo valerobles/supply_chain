@@ -53,7 +53,7 @@ class SupplyChain extends React.Component {
       }
     });
   };
-  //TODO change to handle current draft in state
+
   handleFieldChange = (index, fieldName, event) => {
     const { labelToText } = this.state.currentDraft;
     const newLabelToText = [...labelToText];
@@ -65,6 +65,31 @@ class SupplyChain extends React.Component {
       }
     });
   };
+
+  handleNextOwnerChange = (event) => {
+    const newNextOwner = event.target.value;
+    this.setState({
+      currentDraft: {
+        ...this.state.currentDraft,
+        nextOwner: {
+          ...this.state.currentDraft.nextOwner,
+          userId: newNextOwner
+        }
+      }
+    });
+  };
+
+  handleChildNodesChange = (event) => {
+    const newChildNodes = event.target.value;
+    this.setState({
+      currentDraft: {
+        ...this.state.currentDraft,
+        previousNodesIDs: newChildNodes
+      
+      }
+    });
+  };
+  
   
 
   printDraftForm = () => {
@@ -312,7 +337,6 @@ class SupplyChain extends React.Component {
     const section = document.querySelector('section:last-of-type');
     section?.appendChild(newImage);
   }
-  // currentDraft: { id: 0, title: '', nextOwner: { userName: '', userId: '' }, labelToText: [{ label: '', text: '' }], previousNodesIDs: [0], file: null }
 
   async setCurrentDraft(id) {
     let draft = await this.state.actor.getDraftById(id);
@@ -337,8 +361,8 @@ class SupplyChain extends React.Component {
       <table>
         <tbody>
           <tr>
-            <td>Next Owner ID:</td><td><input value={tmpDraft.nextOwner.userId} onChange={(event) => { }} required id="newNodeNextOwner"></input></td>
-            <td>Child nodes:</td><td><input value={tmpDraft.previousNodesIDs} onChange={(event) => { }} id="newNodeChildren" placeholder="1,2,..."></input></td>
+            <td>Next Owner ID:</td><td><input value={tmpDraft.nextOwner.userId} onChange={(event) => this.handleNextOwnerChange(event)}></input></td>
+            <td>Child nodes:</td><td><input value={tmpDraft.previousNodesIDs} onChange={(event) => this.handleChildNodesChange(event)} placeholder="1,2,..."></input></td>
           </tr>
         </tbody>
       </table>
