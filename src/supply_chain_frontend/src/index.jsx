@@ -272,15 +272,18 @@ class SupplyChain extends React.Component {
 
       title.value = "";
 
-      let response = "";
+      
       if (tValue.length > 0) {
         //Check if there are any child nodes. If not, the node is a "rootnode", which is a node without children
 
-        response += await this.state.actor.createDraftNode(tValue);
+        let response = await this.state.actor.createDraftNode(tValue);
+        alert(response)
+        this.getDraftBySupplier()
+        
       }
     }
 
-    document.getElementById("createResult").innerText = response;
+  
   }
 
   async getDraftBySupplier() {
@@ -563,7 +566,9 @@ class SupplyChain extends React.Component {
     console.log("Add supplier "+hasAccess);
     if (hasAccess) {
        myElement.style.display = "block"; // Show the element
-    } 
+    } else {
+      myElement.style.display = "none"; 
+   } 
   
   }
 
@@ -572,7 +577,9 @@ class SupplyChain extends React.Component {
     let myElement = document.getElementById("createDraftBlock");
     if (supplierLoggedIn) {
        myElement.style.display = "block"; // Show the element
-    } 
+    } else {
+      myElement.style.display = "none"; 
+   } 
   
   }
 
