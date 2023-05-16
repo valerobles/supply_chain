@@ -16,6 +16,7 @@ public type Supplier = {
   //TODO key/value instead of one text
   texts : [(Text,Text)];
   previousNodes : L.List<Node>;
+  assetKeys : [Text] ;
 };
 
    public type SupplierToDraftNodeID = {

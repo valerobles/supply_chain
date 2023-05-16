@@ -3,7 +3,7 @@ import List "mo:base/List";
 import Nat "mo:base/Nat";
 
 module Utils {
-   public func getNodeById(id : Nat, allNodes : List.List<T.Node>) : (?T.Node) {
+   public  func getNodeById(id : Nat, allNodes : List.List<T.Node>) : (?T.Node) {
     List.find<T.Node>(allNodes, func n { n.nodeId == id });
   };
    public func getNodesByOwnerId(id : Text, allNodes : List.List<T.Node>) : (List.List<T.Node>) {

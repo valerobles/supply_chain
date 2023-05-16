@@ -62,7 +62,7 @@ actor Main {
           case (?username) {
             if (draft.previousNodesIDs[0] == 0) {
               Debug.print("ZERO");
-              let newNode = createNode(draft.id, List.nil(), draft.title, draft.owner, draft.nextOwner,draft.labelToText);
+              let newNode = createNode(draft.id, List.nil(), draft.title, draft.owner, draft.nextOwner, draft.labelToText, draft.assetKeys);
               allNodes := List.push<Types.Node>(newNode, allNodes);
               removeDraft(draft.id, caller);
               "Finalized node with ID: " #Nat.toText(nodeId);
@@ -96,7 +96,7 @@ actor Main {
               //Check if all nodes were found
               if (c1 == c2) {
                 //Create the new node with a list of child nodes and other metadata
-                let newNode = createNode(draft.id, childNodes, draft.title, draft.owner, draft.nextOwner,draft.labelToText);
+                let newNode = createNode(draft.id, childNodes, draft.title, draft.owner, draft.nextOwner, draft.labelToText, draft.assetKeys);
                 allNodes := List.push<Types.Node>(newNode, allNodes);
                 removeDraft(draft.id, caller);
                 "Finalized node with ID: " #Nat.toText(nodeId);
@@ -113,7 +113,7 @@ actor Main {
 
   //TODO next owner gets notified to create node containing this one and maybe others
   //Creates a new Node, increments nodeId BEFORE creating it.
-  private func createNode(id : Nat, previousNodes : List.List<Types.Node>, title : Text, currentOwner : Types.Supplier, nextOwner : Types.Supplier,labelToText : [(Text,Text)]) : (Types.Node) {
+  private func createNode(id : Nat, previousNodes : List.List<Types.Node>, title : Text, currentOwner : Types.Supplier, nextOwner : Types.Supplier, labelToText : [(Text, Text)], assetKeys : [Text]) : (Types.Node) {
 
     {
       nodeId = id;
@@ -122,6 +122,7 @@ actor Main {
       nextOwner = { userId = nextOwner.userId; userName = nextOwner.userName };
       texts = labelToText;
       previousNodes = previousNodes;
+      assetKeys = assetKeys;
     };
   };
 
@@ -167,6 +168,21 @@ actor Main {
   };
   public query func showAllNodes() : async Text {
     Utils.nodeListToText(allNodes);
+  };
+
+  //Returns all information of a node excluding id/childnodes
+  //Values are all empty if node does not exist
+  public query func getNodeById(id : Nat) : async (Text, Types.Supplier, Types.Supplier, [(Text, Text)], [Text]) {
+    let node = Utils.getNodeById(id, allNodes);
+    switch (node) {
+      case null {
+        ("", { userName = ""; userId = "" }, { userName = ""; userId = "" }, [("", "")], [""]);
+      };
+      case (?node) {
+        return (node.title, node.owner, node.nextOwner, node.texts, node.assetKeys);
+      };
+    };
+
   };
 
   public shared (message) func saveToDraft(nodeId : Nat, nextOwner : Types.Supplier, labelToText : [(Text, Text)], previousNodes : [Nat], assetKeys : [Text]) : async (Text) {
