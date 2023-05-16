@@ -25,6 +25,14 @@ class SupplyChain extends React.Component {
         labelToText: [{ label: '', text: '' }],
         previousNodesIDs: [0],
         draftFile: [""]
+      }, 
+      currentNode: {
+        id: 0,
+        title: '',
+        owner: { userName: '', userId: '' },
+        nextOwner: { userName: '', userId: '' },
+        labelToText: [{ label: '', text: '' }],
+        files: [""]
       }
     };
   }
@@ -93,12 +101,72 @@ class SupplyChain extends React.Component {
     });
   };
 
+  async getNodeById() {
+    let idInput = document.getElementById("nodeId");
+    let idValue = BigInt(idInput.value);
+  
+    let node = await this.state.actor.getNodeById(idValue); // maybe cast in BigInt
+    console.log(node);
+    const { currentNode } = this.state;
+    currentNode.id = idInput;
+    currentNode.title = node[0];
+    currentNode.owner = node[1];
+    currentNode.nextOwner = node[2];
+    currentNode.labelToText = node[3].map(([label, text]) => ({
+      label,
+      text
+    }));
+    currentNode.files = node[4];
+    this.setState({ currentNode: currentNode });
+
+    this.loadImage(currentNode.files,false);
+
+  }
+
+  showNode() {
+
+    const tmpNode = this.state.currentNode;
+
+    if (tmpNode.id != 0) {
+      return (
+      <div><h1>{tmpNode.title}</h1>
+       
+              <label>Owner ID:</label><label>{tmpNode.owner.userId}</label>
+              <br></br>
+              <label>Next Owner ID:</label><label>{tmpNode.nextOwner.userId}</label>
+       
+        <div>
+
+          {(tmpNode.labelToText || []).map((field, index) => (
+            <div>
+              <label>{field.label}:  </label>
+              <label>{field.text}</label>
+            </div>
+
+          ))}
+        
+        </div>
+        <h4>Files</h4>
+        <section>
+          <section id="nodeImage"></section>
+        </section>
+      </div>)
+    }
+
+  }
 
 
   async finalizeNode() {
-    console.log(this.state.currentDraft)
     let response = await this.state.actor.createLeafNode(this.state.currentDraft.id);
     alert(response);
+    this.state.currentDraft = {
+      id: 0,
+      title: '',
+      nextOwner: { userName: '', userId: '' },
+      labelToText: [{ label: '', text: '' }],
+      previousNodesIDs: [0],
+      draftFile: [""]
+    }
   }
 
   async saveDraft() {
@@ -109,8 +177,6 @@ class SupplyChain extends React.Component {
 
     const { currentDraft } = this.state;
 
-    //console.log("After upload")
-    //console.log(currentDraft)
 
     // Construct Arguments to send to backend canister
     const currentD = [
@@ -348,7 +414,7 @@ class SupplyChain extends React.Component {
 
 
     // Once the files has been saved in the backend canister it can be loaded to be seen on the frontend
-    this.loadImage(currentDraft.draftFile);
+    this.loadImage(currentDraft.draftFile, true);
   }
 
   // Takes a record of batch_name and chunk
@@ -363,13 +429,13 @@ class SupplyChain extends React.Component {
 
 
 
-  loadImage(files) {
+  loadImage(files, isDraft) {
     if (!files) {
       return;
     }
 
 
-    const section = document.querySelector('section:last-of-type');
+    const section = isDraft? document.querySelector('#draftImage'): document.querySelector('#nodeImage');
 
     // Create a document fragment to hold the image tags
     const fragment = document.createDocumentFragment();
@@ -403,7 +469,7 @@ class SupplyChain extends React.Component {
     currentDraft.draftFile = draft[5];
     this.setState({ currentDraft: currentDraft });
 
-    this.loadImage(currentDraft.draftFile);
+    this.loadImage(currentDraft.draftFile, true);
 
   }
   showDraft() {
@@ -454,7 +520,7 @@ class SupplyChain extends React.Component {
           <label for="image">Image:</label>
           <input id="image" alt="image" onChange={(e) => this.handleFileSelection(e)} type="file" accept="image/x-png,image/jpeg,image/gif,image/svg+xml,image/webp,image/*,.pdf" />
           {/* <button className="upload" onClick={() => this.upload()}>Upload</button> */}
-          <section></section>
+          <section id="draftImage"></section>
         </section>
 
         <button type="button" onClick={() => this.saveDraft()}>
@@ -490,8 +556,29 @@ class SupplyChain extends React.Component {
           <button onClick={() => this.addSupplier()}>Create Supplier</button>
           <div id="supplierResponse"></div>
           <br></br>
+          
         <button onClick={() => this.getNodes()}>Get all nodes</button>
         <div id="allNodes"></div>
+        <br></br>
+        <p>Get node by Id:</p>
+        <input type="number" required id="nodeId"></input>
+        <button onClick={() => this.getNodeById()}>Get Node</button>
+        <br></br>
+        {this.showNode()}
+        <br></br>
+        <div>
+          <p> Get Chain by last node ID</p>
+          <table>
+            <tbody>
+              <tr>
+                <td>Last node ID:</td><td><input type="number" required id="parentId"></input></td>
+              </tr>
+            </tbody>
+          </table>
+          <button onClick={() => this.getChildNodes()}>Show Child Nodes</button>
+          <div id="treeResult"></div>
+        </div>
+        <br></br>
         <button onClick={() => this.getSuppliers()}>Get all suppliers</button>
         <div id="suppliers"></div>
           <br></br>
@@ -523,18 +610,7 @@ class SupplyChain extends React.Component {
         </div>
         
         <br></br>
-        <div>
-          <h3> Get Chain by last node ID</h3>
-          <table>
-            <tbody>
-              <tr>
-                <td>Last node ID:</td><td><input type="number" required id="parentId"></input></td>
-              </tr>
-            </tbody>
-          </table>
-          <button onClick={() => this.getChildNodes()}>Show Child Nodes</button>
-          <div id="treeResult"></div>
-        </div>
+       
         <div>{this.showDraft()}</div>
       </div>
     );
