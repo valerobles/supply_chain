@@ -452,7 +452,7 @@ class SupplyChain extends React.Component {
         <h4>Upload file</h4>
         <section>
           <label for="image">Image:</label>
-          <input id="image" alt="image" onChange={(e) => this.handleFileSelection(e)} type="file" accept="image/x-png,image/jpeg,image/gif,image/svg+xml,image/webp" />
+          <input id="image" alt="image" onChange={(e) => this.handleFileSelection(e)} type="file" accept="image/x-png,image/jpeg,image/gif,image/svg+xml,image/webp,image/*,.pdf" />
           {/* <button className="upload" onClick={() => this.upload()}>Upload</button> */}
           <section></section>
         </section>
