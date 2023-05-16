@@ -14,7 +14,7 @@ public type Supplier = {
   nextOwner : Supplier; 
   //Holds information to this node
   //TODO key/value instead of one text
-  texts : L.List<Text>;
+  texts : [(Text,Text)];
   previousNodes : L.List<Node>;
 };
 

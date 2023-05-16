@@ -95,10 +95,10 @@ class SupplyChain extends React.Component {
 
 
 
-  async printDraftForm() {
+  async finalizeNode() {
     console.log(this.state.currentDraft)
     let response = await this.state.actor.createLeafNode(this.state.currentDraft.id);
-    document.getElementById("createResult").innerText = response;
+    alert(response);
   }
 
   async saveDraft() {
@@ -178,8 +178,8 @@ class SupplyChain extends React.Component {
       if (caller === "2vxsx-fae") {
         response = "Node was not created. Login to a supplier account to create nodes."
       }
-
-      document.getElementById("createResult").innerText = response;
+      alert(response)
+      //document.getElementById("createResult").innerText = response;
     }
   }
 
@@ -460,7 +460,7 @@ class SupplyChain extends React.Component {
         <button type="button" onClick={() => this.saveDraft()}>
           Save
         </button>
-        <button type="button" onClick={() => this.printDraftForm()}>
+        <button type="button" onClick={() => this.finalizeNode()}>
           Finalize
         </button>
       </div>)

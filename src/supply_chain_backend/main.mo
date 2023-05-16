@@ -62,7 +62,7 @@ actor Main {
           case (?username) {
             if (draft.previousNodesIDs[0] == 0) {
               Debug.print("ZERO");
-              let newNode = createNode(draft.id, List.nil(), draft.title, draft.owner, draft.nextOwner);
+              let newNode = createNode(draft.id, List.nil(), draft.title, draft.owner, draft.nextOwner,draft.labelToText);
               allNodes := List.push<Types.Node>(newNode, allNodes);
               removeDraft(draft.id, caller);
               "Finalized node with ID: " #Nat.toText(nodeId);
@@ -96,7 +96,7 @@ actor Main {
               //Check if all nodes were found
               if (c1 == c2) {
                 //Create the new node with a list of child nodes and other metadata
-                let newNode = createNode(draft.id, childNodes, draft.title, draft.owner, draft.nextOwner);
+                let newNode = createNode(draft.id, childNodes, draft.title, draft.owner, draft.nextOwner,draft.labelToText);
                 allNodes := List.push<Types.Node>(newNode, allNodes);
                 removeDraft(draft.id, caller);
                 "Finalized node with ID: " #Nat.toText(nodeId);
@@ -113,14 +113,14 @@ actor Main {
 
   //TODO next owner gets notified to create node containing this one and maybe others
   //Creates a new Node, increments nodeId BEFORE creating it.
-  private func createNode(id : Nat, previousNodes : List.List<Types.Node>, title : Text, currentOwner : Types.Supplier, nextOwner : Types.Supplier) : (Types.Node) {
+  private func createNode(id : Nat, previousNodes : List.List<Types.Node>, title : Text, currentOwner : Types.Supplier, nextOwner : Types.Supplier,labelToText : [(Text,Text)]) : (Types.Node) {
 
     {
       nodeId = id;
       title = title;
       owner = { userId = currentOwner.userId; userName = currentOwner.userName };
       nextOwner = { userId = nextOwner.userId; userName = nextOwner.userName };
-      texts = List.nil<Text>();
+      texts = labelToText;
       previousNodes = previousNodes;
     };
   };
