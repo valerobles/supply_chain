@@ -15,6 +15,7 @@ import Blob "mo:base/Blob";
 import Error "mo:base/Error";
 import Buffer "mo:base/Buffer";
 import DraftNode "draftNode";
+import Bool "mo:base/Bool";
 
 actor Main {
 
@@ -183,6 +184,39 @@ actor Main {
       };
     };
 
+  };
+
+  public query func checkNodeExists(id : Nat) : async (Bool) {
+    let node = Utils.getNodeById(id, allNodes);
+    switch (node) {
+      case null {
+        false;
+      };
+      case (?node) {
+        return true;
+      };
+    };
+
+  };
+
+  
+
+  public query (message) func isSupplierLoggedIn() : async Bool {
+   let ownerId = Principal.toText(message.caller);
+    if (suppliers.get(ownerId) == null) {
+      return false;
+    } else {
+      return true;
+    };
+  };
+
+  public query (message) func canAddNewSupplier(): async Bool {
+    let ownerId = Principal.toText(message.caller);
+    if (suppliers.get(ownerId) != null or suppliers.size() == 0) {
+        return true;
+      } else {
+        return false;
+      };
   };
 
   public shared (message) func saveToDraft(nodeId : Nat, nextOwner : Types.Supplier, labelToText : [(Text, Text)], previousNodes : [Nat], assetKeys : [Text]) : async (Text) {

@@ -102,24 +102,34 @@ class SupplyChain extends React.Component {
   };
 
   async getNodeById() {
+
     let idInput = document.getElementById("nodeId");
     let idValue = BigInt(idInput.value);
-  
-    let node = await this.state.actor.getNodeById(idValue); // maybe cast in BigInt
-    console.log(node);
-    const { currentNode } = this.state;
-    currentNode.id = idInput;
-    currentNode.title = node[0];
-    currentNode.owner = node[1];
-    currentNode.nextOwner = node[2];
-    currentNode.labelToText = node[3].map(([label, text]) => ({
-      label,
-      text
-    }));
-    currentNode.files = node[4];
-    this.setState({ currentNode: currentNode });
 
-    this.loadImage(currentNode.files,false);
+    let nodeExists = await this.state.actor.checkNodeExists(idValue);
+
+
+    if (nodeExists){
+      let node = await this.state.actor.getNodeById(idValue); // maybe cast in BigInt
+      console.log(node);
+      const { currentNode } = this.state;
+      currentNode.id = idInput;
+      currentNode.title = node[0];
+      currentNode.owner = node[1];
+      currentNode.nextOwner = node[2];
+      currentNode.labelToText = node[3].map(([label, text]) => ({
+        label,
+        text
+      }));
+      currentNode.files = node[4];
+      this.setState({ currentNode: currentNode });
+  
+      this.loadImage(currentNode.files,false);
+    } else {
+      alert("invalid node id");
+    }
+  
+    
 
   }
 
@@ -211,8 +221,8 @@ class SupplyChain extends React.Component {
     userName.value = "";
     userID.value = "";
     alert(response)
-   // document.getElementById("supplierResponse").innerText = response;
-    // actor.addSupplier(ii, userName);
+    this.showCreateDraft()
+ 
   }
 
   async createNode() {
@@ -274,14 +284,24 @@ class SupplyChain extends React.Component {
   }
 
   async getDraftBySupplier() {
-    let result = await this.state.actor.getDraftsBySupplier();
+    let isSupplier = this.state.actor.isSupplierLoggedIn();
+    let myElement = document.getElementById("draftsList");
+    if(isSupplier){
 
-    let tempDrafts = [];
-    result.forEach((d) => {
-      tempDrafts = [...tempDrafts, { id: Number(d[0]), title: d[1] }]
+      let result = await this.state.actor.getDraftsBySupplier();
+      myElement.style.display = "block"; // Show the element
 
-    });
-    this.setState({ drafts: tempDrafts });
+      let tempDrafts = [];
+      result.forEach((d) => {
+        tempDrafts = [...tempDrafts, { id: Number(d[0]), title: d[1] }]
+  
+      });
+      this.setState({ drafts: tempDrafts });
+      console.log(this.state.drafts)
+    } else {
+      myElement.style.display = "none";
+    }
+    
 
   }
   async login() {
@@ -311,6 +331,8 @@ class SupplyChain extends React.Component {
     document.getElementById("greeting").innerText = greeting;
 
     this.getDraftBySupplier();
+    this.showCreateDraft();
+    this.showAddSupplier();
     return false;
 
   }
@@ -326,6 +348,7 @@ class SupplyChain extends React.Component {
   async getSuppliers() {
     let all = await this.state.actor.getSuppliers();
     document.getElementById("suppliers").innerHTML = all;
+    
   }
   async getChildNodes() {
     let tree = document.getElementById("parentId");
@@ -534,6 +557,25 @@ class SupplyChain extends React.Component {
 
   }
 
+  async showAddSupplier() {
+    let hasAccess = await this.state.actor.canAddNewSupplier();
+    let myElement = document.getElementById("addSupplier");
+    console.log("Add supplier "+hasAccess);
+    if (hasAccess) {
+       myElement.style.display = "block"; // Show the element
+    } 
+  
+  }
+
+  async showCreateDraft(){
+    let supplierLoggedIn = await this.state.actor.isSupplierLoggedIn();
+    let myElement = document.getElementById("createDraftBlock");
+    if (supplierLoggedIn) {
+       myElement.style.display = "block"; // Show the element
+    } 
+  
+  }
+
 
   render() {
     const { drafts } = this.state;
@@ -542,7 +584,7 @@ class SupplyChain extends React.Component {
         <h1>Supply Chain</h1>
         <button type="submit" id="login" onClick={() => this.login()}>Login</button>
         <h2 id="greeting"></h2>
-        <div>
+        <div id="addSupplier" style={{display: "none"}} >
           <h3> Add supplier</h3>
           <table>
             <tbody>
@@ -556,7 +598,8 @@ class SupplyChain extends React.Component {
           <button onClick={() => this.addSupplier()}>Create Supplier</button>
           <div id="supplierResponse"></div>
           <br></br>
-          
+        </div>
+        <div>  
         <button onClick={() => this.getNodes()}>Get all nodes</button>
         <div id="allNodes"></div>
         <br></br>
@@ -581,36 +624,49 @@ class SupplyChain extends React.Component {
         <br></br>
         <button onClick={() => this.getSuppliers()}>Get all suppliers</button>
         <div id="suppliers"></div>
-          <br></br>
-          <button type="button" onClick={() => this.getDraftBySupplier()}>
-            Get drafts by supplier
-          </button>
-        </div>
-        {drafts.map((draft, index) => (
-          <div key={index}>
-            <label>{draft.title}</label>
-            {(
-              <button type="button" onClick={() => this.setCurrentDraft(draft.id)}>
-                Edit draft
-              </button>
-            )}
-          </div>
-        ))}
-        <div>
-          <h3>Create Draft node:</h3>
-          <table>
-            <tbody>
-              <tr>
-                <td>Title:</td><td><input required id="newNodeTitle"></input></td>
-              </tr>
-            </tbody>
-          </table>
-          <button onClick={() => this.createDraftNode()}>Create Draft Node</button>
-          <div id="createResult"></div>
-        </div>
-        
         <br></br>
-       
+        <div id="draftsList" style={{display: "none"}}>
+         <h4>My drafts</h4>
+         {drafts.length == 0 &&(
+           <div>No drafts created</div>
+         )}
+          {/* <button type="button" onClick={() => this.getDraftBySupplier()}>
+            Get my drafts
+          </button> */}
+        {drafts.length > 0 &&(
+          <div>
+            {drafts.map((draft, index) => (
+              <div key={index}>
+                <label>{draft.title}</label>
+                <button type="button" onClick={() => this.setCurrentDraft(draft.id)}>
+                  Edit draft
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        </div>
+          
+         
+        </div>
+      
+
+
+        <div id="createDraftBlock" style={{display: "none"}}>
+            <h3>Create Draft node:</h3>
+            <table>
+              <tbody>
+                <tr>
+                  <td>Title:</td><td><input required id="newNodeTitle"></input></td>
+                </tr>
+              </tbody>
+            </table>
+            <button onClick={() => this.createDraftNode()}>Create Draft Node</button>
+            <div id="createResult"></div>  
+          <br></br>
+        </div>
+    
+      
         <div>{this.showDraft()}</div>
       </div>
     );
