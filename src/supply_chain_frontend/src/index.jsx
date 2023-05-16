@@ -198,7 +198,10 @@ class SupplyChain extends React.Component {
     ];
 
     let response = await this.state.actor.saveToDraft(...currentD);
+    this.state.file = null;
     alert(response);
+    this.loadImage(currentDraft.draftFile,true)
+    
   }
 
 
@@ -460,8 +463,11 @@ class SupplyChain extends React.Component {
       return;
     }
 
-
     const section = isDraft? document.querySelector('#draftImage'): document.querySelector('#nodeImage');
+
+    while (section.firstChild) {
+      section.removeChild(section.firstChild);
+    }
 
     // Create a document fragment to hold the image tags
     const fragment = document.createDocumentFragment();
@@ -506,6 +512,12 @@ class SupplyChain extends React.Component {
     currentDraft.previousNodesIDs = draft[4];
     currentDraft.draftFile = draft[5];
     this.setState({ currentDraft: currentDraft });
+
+    // remove images and file from the last current draft
+    const section = document.querySelector('#draftImage');
+    while (section.firstChild) {
+      section.removeChild(section.firstChild);
+    }
 
     this.loadImage(currentDraft.draftFile, true);
 
@@ -649,9 +661,7 @@ class SupplyChain extends React.Component {
          {drafts.length == 0 &&(
            <div>No drafts created</div>
          )}
-          {/* <button type="button" onClick={() => this.getDraftBySupplier()}>
-            Get my drafts
-          </button> */}
+        
         {drafts.length > 0 &&(
           <div>
             {drafts.map((draft, index) => (
