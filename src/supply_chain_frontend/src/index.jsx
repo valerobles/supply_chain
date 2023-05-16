@@ -468,13 +468,25 @@ class SupplyChain extends React.Component {
 
     // Iterate over the image sources and create image tags
     files.forEach((src) => {
-      const img = document.createElement('img');
-      img.width = 300;
-      img.height = 200;
-      console.log(src);
-      img.src = `http://localhost:4943${src}?canisterId=ryjl3-tyaaa-aaaaa-aaaba-cai`;
-      fragment.appendChild(img);
+      const fileExtension = src.split('.').pop().toLowerCase();
+      
+      if (fileExtension === 'pdf') {
+        // Handle PDF files
+        const embed = document.createElement('embed');
+        embed.width = 600;
+        embed.height = 400;
+        embed.src = `http://localhost:4943${src}?canisterId=ryjl3-tyaaa-aaaaa-aaaba-cai`;
+        fragment.appendChild(embed);
+      } else {
+        // Handle image files
+        const img = document.createElement('img');
+        img.width = 300;
+        img.height = 200;
+        img.src = `http://localhost:4943${src}?canisterId=ryjl3-tyaaa-aaaaa-aaaba-cai`;
+        fragment.appendChild(img);
+      }
     });
+    
 
     // Append the fragment to the section element
     section?.appendChild(fragment);
