@@ -168,15 +168,20 @@ class SupplyChain extends React.Component {
 
   async finalizeNode() {
     let response = await this.state.actor.createLeafNode(this.state.currentDraft.id);
-    alert(response);
-    this.state.currentDraft = {
-      id: 0,
-      title: '',
-      nextOwner: { userName: '', userId: '' },
-      labelToText: [{ label: '', text: '' }],
-      previousNodesIDs: [0],
-      draftFile: [""]
+
+    alert(response[0]);
+    if (response[1]) {
+      this.state.currentDraft = {
+        id: 0,
+        title: '',
+        nextOwner: { userName: '', userId: '' },
+        labelToText: [{ label: '', text: '' }],
+        previousNodesIDs: [0],
+        draftFile: [""]
+      }
+      this.getDraftBySupplier()
     }
+  
   }
 
   async saveDraft() {

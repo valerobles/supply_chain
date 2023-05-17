@@ -46,7 +46,7 @@ actor Main {
   //Creates a New node with n child nodes. Child nodes are given as a list of IDs in previousnodes.
   //CurrentOwner needs to be the same as "nextOwner" in the given childNodes to point to them.
   //previousNodes: Array of all child nodes. If the first elementdfx is "0", the list is assumed to be empty.
-  public shared (message) func createLeafNode(draftId : Nat) : async (Text) {
+  public shared (message) func createLeafNode(draftId : Nat) : async (Text, Bool) {
     let caller = Principal.toText(message.caller);
     let draft = getDraftByIdAsObject(draftId, caller);
     let owner = draft.owner;
@@ -55,18 +55,18 @@ actor Main {
 
     //Check if  next owner is null
     switch (usernameNextOwner) {
-      case null { return "Error: Next owner not found." };
+      case null { return ("Error: Next owner not found.", false) };
       case (?usernameNextOwner) {
         //Check if  current owner is null
         switch (username) {
-          case null { return "Error: Logged in Account not found." };
+          case null { return ("Error: Logged in Account not found.", false) };
           case (?username) {
             if (draft.previousNodesIDs[0] == 0) {
               Debug.print("ZERO");
               let newNode = createNode(draft.id, List.nil(), draft.title, draft.owner, draft.nextOwner, draft.labelToText, draft.assetKeys);
               allNodes := List.push<Types.Node>(newNode, allNodes);
               removeDraft(draft.id, caller);
-              "Finalized node with ID: " #Nat.toText(nodeId);
+              ("Finalized node with ID: " #Nat.toText(draft.id), true);
             } else {
               // Map given Ids (previousNodes) to actual nodes, if they exist, they are added to childNodes
               //TODO maybe abort creation if one or more are not found?
@@ -100,9 +100,9 @@ actor Main {
                 let newNode = createNode(draft.id, childNodes, draft.title, draft.owner, draft.nextOwner, draft.labelToText, draft.assetKeys);
                 allNodes := List.push<Types.Node>(newNode, allNodes);
                 removeDraft(draft.id, caller);
-                "Finalized node with ID: " #Nat.toText(nodeId);
+                ("Finalized node with ID: " #Nat.toText(draft.id), true);
               } else {
-                return "Error: Some Child IDs were invalid or missing ownership.";
+                return ("Error: Some Child IDs were invalid or missing ownership.", false);
               };
             };
           };
