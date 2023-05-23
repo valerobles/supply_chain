@@ -141,9 +141,9 @@ class SupplyChain extends React.Component {
       return (
       <div><h1>{tmpNode.title}</h1>
        
-              <label>Owner ID:</label><label>{tmpNode.owner.userId}</label>
+              <label>Owner ID:  </label><label>{tmpNode.owner.userId}</label>
               <br></br>
-              <label>Next Owner ID:</label><label>{tmpNode.nextOwner.userId}</label>
+              <label>Next Owner ID:  </label><label>{tmpNode.nextOwner.userId}</label>
        
         <div>
 

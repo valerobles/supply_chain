@@ -346,8 +346,18 @@ actor Main {
   };
 
   public query (message) func greet() : async Text {
-
-    return "Logged in as: " # Principal.toText(message.caller);
+    let id = Principal.toText(message.caller);
+    let sup = suppliers.get(id);
+  
+    switch (sup) {
+      case null {
+         return "Logged in with ID: " # id;
+      };
+      case (?sup) {
+        return "Logged in as: " # sup # "\n Logged in with ID: " # id;
+      };
+    };
+    
   };
 
   public query func getSuppliers() : async [Text] {
