@@ -127,6 +127,9 @@ actor Main {
     };
   };
 
+  public shared func getCurrentNodeId() : async Nat {
+    nodeId;
+  };
   // Creates a DraftNode object. It takes nodeId and the owner.
   // with the created DraftNode object, it is added to the supplierToDraftNodeID Hashmap as a List
   // that manages the supplier to all of their drafts
@@ -157,7 +160,7 @@ actor Main {
         };
         tempList := List.push<DraftNode.DraftNode>(node, tempList);
         supplierToDraftNodeID.put(ownerId, tempList);
-        return "Draft succesfully created";
+        return "Draft with id: "#Nat.toText(nodeId) #" succesfully created";
       };
     };
 
@@ -199,10 +202,8 @@ actor Main {
 
   };
 
-  
-
   public query (message) func isSupplierLoggedIn() : async Bool {
-   let ownerId = Principal.toText(message.caller);
+    let ownerId = Principal.toText(message.caller);
     if (suppliers.get(ownerId) == null) {
       return false;
     } else {
@@ -210,13 +211,13 @@ actor Main {
     };
   };
 
-  public query (message) func canAddNewSupplier(): async Bool {
+  public query (message) func canAddNewSupplier() : async Bool {
     let ownerId = Principal.toText(message.caller);
     if (suppliers.get(ownerId) != null or suppliers.size() == 0) {
-        return true;
-      } else {
-        return false;
-      };
+      return true;
+    } else {
+      return false;
+    };
   };
 
   public shared (message) func saveToDraft(nodeId : Nat, nextOwner : Types.Supplier, labelToText : [(Text, Text)], previousNodes : [Nat], assetKeys : [Text]) : async (Text) {
