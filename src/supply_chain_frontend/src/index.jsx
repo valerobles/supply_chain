@@ -1,6 +1,7 @@
 import { createActor, supply_chain_backend } from "../../declarations/supply_chain_backend";
 import { AuthClient } from "@dfinity/auth-client"
-import { HttpAgent } from "@dfinity/agent";
+import { Ed25519KeyIdentity } from '@dfinity/identity';
+import { HttpAgent, createCanister, installCode, Actor, Agent } from "@dfinity/agent";
 import * as React from 'react';
 import { render } from 'react-dom';
 import React, { useState } from 'react';
@@ -17,6 +18,7 @@ class SupplyChain extends React.Component {
     this.state = {
       actor: supply_chain_backend,
       file: null,
+      wasm: null,
       drafts: [{ id: '', title: '' }],
       currentDraft: {
         id: 0,
@@ -25,7 +27,7 @@ class SupplyChain extends React.Component {
         labelToText: [{ label: '', text: '' }],
         previousNodesIDs: [0],
         draftFile: [""]
-      }, 
+      },
       currentNode: {
         id: 0,
         title: '',
@@ -35,6 +37,155 @@ class SupplyChain extends React.Component {
         files: [""]
       }
     };
+  }
+
+  async wasmHandler(event) {
+    this.state.wasm = event.target.files[0];
+    console.log(this.state.wasm)
+
+  }
+
+
+  //     // Fill array with the uploadChunkt function. The array be executed later
+  //     // "uploadChunk" takees the batch_name(file name) and the chunk
+  //     promises.push(this.uploadChunk({
+  //       batch_name,
+  //       chunk
+  //     }));
+  //   }
+
+  //   // Executes the "uploadChunk" defined in the promises array. Returns the chunkIDs created in the backend
+  //   const chunkIds = await Promise.all(promises);
+
+  //   console.log(chunkIds);
+
+  //   const node_id = BigInt(currentDraft.id)
+
+  //   //Finish upload by commiting file batch to be saved in backend canister with the current node ID
+  //   await this.state.actor.commit_batch({
+  //     node_id,
+  //     batch_name,
+  //     chunk_ids: chunkIds.map(({ chunk_id }) => chunk_id),
+  //     content_type: this.state.file.type
+  //   })
+
+  //   console.log('uploaded');
+
+  //   const assetKey = [...currentDraft.draftFile, "/" + currentDraft.id + "/assets/" + batch_name]
+  //   this.setState({
+  //     currentDraft: {
+  //       ...this.state.currentDraft,
+  //       draftFile: assetKey
+  //     }
+  //   });
+
+
+  //   // Once the files has been saved in the backend canister it can be loaded to be seen on the frontend
+  //   this.loadImage(currentDraft.draftFile, true);
+  // }
+
+  // // Takes a record of batch_name and chunk
+  // // calls the backend canister method "create_chunk"
+  // //converts chunk of type Blob into a Uint8Array to send it to backend canister. Motoko reads it as [Nat8]
+  // async uploadChunk({ batch_name, chunk }) {
+  //   return this.state.actor.create_chunk({
+  //     batch_name,
+  //     content: [...new Uint8Array(await chunk.arrayBuffer())]
+  //   });
+  // }
+
+
+  async installWasm() {
+    const promises = [];
+
+    console.log(`Installing wasm code in manager.`);
+    //const response = await fetch('/Users/valeria/Documents/Internet Computer/IP6/coffee/.dfx/local/canisters/supply_chain_backend/supply_chain_backend.wasm');
+    //console.log(response);
+    //const wasmModule = await response.blob();
+    //console.log(wasmModule);
+    //const buffer = await response.arrayBuffer();
+    //const uint = new Uint8Array(this.state.wasm);
+    //console.log(uint);
+
+
+    const chunkSize_ = 700000;
+
+    // const upload = async (chunks) => {
+    //   const result = await this.state.actor.storageLoadWasm(chunks);
+    //   console.log('Chunks:', result);
+    // };
+
+    for (let start = 0; start < this.state.wasm.size; start += chunkSize_) {
+      const chunk = this.state.wasm.slice(start, start + chunkSize_); // returns a Blob obj
+      console.log(chunk);
+
+      promises.push(this.installW(
+        chunk
+      ));
+    }
+
+    const c = await Promise.all(promises);
+
+    console.log(c);
+
+
+
+    console.log(`Installation done.`);
+  };
+
+  async installW(chunk) {
+    return await this.state.actor.storageLoadWasm(
+     [...new Uint8Array(await chunk.arrayBuffer())]
+    );
+  }
+
+  async handleCanisterCreation() {
+    try {
+      const agent = await this.getAgent();
+      const wasmM = await this.getWasm();
+      const newCanisterID = await this.createNewCanister(wasmM, agent);
+      console.log("new canister ID: ", newCanisterID);
+    } catch (error) {
+      console.error("Error in creation:", error)
+    }
+
+  }
+
+
+  async getWasm() {
+
+    try {
+      const response = await fetch('.dfx/local/canisters/supply_chain_backend/supply_chain_backend.wasm');
+      const buffer = await response.arrayBuffer();
+      const uint = new Uint8Array(buffer);
+
+      return uint;
+
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  }
+
+  async getAgent() {
+
+    const identity = Ed25519KeyIdentity.generate();
+
+    const agent = Promise.resolve(new HttpAgent({ host: 'http://127.0.0.1:4943', identity })).then(
+      async agent => {
+        await agent.fetchRootKey();
+        return agent;
+      },
+    );
+
+    return agent;
+  }
+
+  async createNewCanister(wasm, agent) {
+
+    const canisterId = await Actor.createCanister({ agent });
+    await Actor.install({ wasm }, { canisterId, agent: agent });
+
+    return canisterId;
   }
 
 
@@ -109,7 +260,7 @@ class SupplyChain extends React.Component {
     let nodeExists = await this.state.actor.checkNodeExists(idValue);
 
 
-    if (nodeExists){
+    if (nodeExists) {
       let node = await this.state.actor.getNodeById(idValue); // maybe cast in BigInt
       console.log(node);
       const { currentNode } = this.state;
@@ -123,13 +274,13 @@ class SupplyChain extends React.Component {
       }));
       currentNode.files = node[4];
       this.setState({ currentNode: currentNode });
-  
-      this.loadImage(currentNode.files,false);
+
+      this.loadImage(currentNode.files, false);
     } else {
       alert("invalid node id");
     }
-  
-    
+
+
 
   }
 
@@ -139,28 +290,28 @@ class SupplyChain extends React.Component {
 
     if (tmpNode.id != 0) {
       return (
-      <div><h1>{tmpNode.title}</h1>
-       
-              <label>Owner ID:  </label><label>{tmpNode.owner.userId}</label>
-              <br></br>
-              <label>Next Owner ID:  </label><label>{tmpNode.nextOwner.userId}</label>
-       
-        <div>
+        <div><h1>{tmpNode.title}</h1>
 
-          {(tmpNode.labelToText || []).map((field, index) => (
-            <div>
-              <label>{field.label}:  </label>
-              <label>{field.text}</label>
-            </div>
+          <label>Owner ID:  </label><label>{tmpNode.owner.userId}</label>
+          <br></br>
+          <label>Next Owner ID:  </label><label>{tmpNode.nextOwner.userId}</label>
 
-          ))}
-        
-        </div>
-        <h4>Files</h4>
-        <section>
-          <section id="nodeImage"></section>
-        </section>
-      </div>)
+          <div>
+
+            {(tmpNode.labelToText || []).map((field, index) => (
+              <div>
+                <label>{field.label}:  </label>
+                <label>{field.text}</label>
+              </div>
+
+            ))}
+
+          </div>
+          <h4>Files</h4>
+          <section>
+            <section id="nodeImage"></section>
+          </section>
+        </div>)
     }
 
   }
@@ -181,7 +332,7 @@ class SupplyChain extends React.Component {
       }
       this.getDraftBySupplier()
     }
-  
+
   }
 
   async saveDraft() {
@@ -205,8 +356,8 @@ class SupplyChain extends React.Component {
     let response = await this.state.actor.saveToDraft(...currentD);
     this.state.file = null;
     alert(response);
-    this.loadImage(currentDraft.draftFile,true)
-    
+    this.loadImage(currentDraft.draftFile, true)
+
   }
 
 
@@ -230,7 +381,11 @@ class SupplyChain extends React.Component {
     userID.value = "";
     alert(response)
     this.showCreateDraft()
- 
+
+    const greeting = await this.state.actor.greet();
+    document.getElementById("greeting").innerText = greeting;
+
+
   }
 
   async createNode() {
@@ -280,24 +435,24 @@ class SupplyChain extends React.Component {
 
       title.value = "";
 
-      
+
       if (tValue.length > 0) {
         //Check if there are any child nodes. If not, the node is a "rootnode", which is a node without children
 
         let response = await this.state.actor.createDraftNode(tValue);
         alert(response)
         this.getDraftBySupplier()
-        
+
       }
     }
 
-  
+
   }
 
   async getDraftBySupplier() {
     let isSupplier = this.state.actor.isSupplierLoggedIn();
     let myElement = document.getElementById("draftsList");
-    if(isSupplier){
+    if (isSupplier) {
 
       let result = await this.state.actor.getDraftsBySupplier();
       myElement.style.display = "block"; // Show the element
@@ -305,14 +460,14 @@ class SupplyChain extends React.Component {
       let tempDrafts = [];
       result.forEach((d) => {
         tempDrafts = [...tempDrafts, { id: Number(d[0]), title: d[1] }]
-  
+
       });
       this.setState({ drafts: tempDrafts });
       console.log(this.state.drafts)
     } else {
       myElement.style.display = "none";
     }
-    
+
 
   }
   async login() {
@@ -359,7 +514,7 @@ class SupplyChain extends React.Component {
   async getSuppliers() {
     let all = await this.state.actor.getSuppliers();
     document.getElementById("suppliers").innerHTML = all;
-    
+
   }
   async getChildNodes() {
     let tree = document.getElementById("parentId");
@@ -468,7 +623,7 @@ class SupplyChain extends React.Component {
       return;
     }
 
-    const section = isDraft? document.querySelector('#draftImage'): document.querySelector('#nodeImage');
+    const section = isDraft ? document.querySelector('#draftImage') : document.querySelector('#nodeImage');
 
     while (section.firstChild) {
       section.removeChild(section.firstChild);
@@ -480,7 +635,7 @@ class SupplyChain extends React.Component {
     // Iterate over the image sources and create image tags
     files.forEach((src) => {
       const fileExtension = src.split('.').pop().toLowerCase();
-      
+
       if (fileExtension === 'pdf') {
         // Handle PDF files
         const embed = document.createElement('embed');
@@ -497,7 +652,7 @@ class SupplyChain extends React.Component {
         fragment.appendChild(img);
       }
     });
-    
+
 
     // Append the fragment to the section element
     section?.appendChild(fragment);
@@ -592,24 +747,24 @@ class SupplyChain extends React.Component {
   async showAddSupplier() {
     let hasAccess = await this.state.actor.canAddNewSupplier();
     let myElement = document.getElementById("addSupplier");
-    console.log("Add supplier "+hasAccess);
+    console.log("Add supplier " + hasAccess);
     if (hasAccess) {
-       myElement.style.display = "block"; // Show the element
+      myElement.style.display = "block"; // Show the element
     } else {
-      myElement.style.display = "none"; 
-   } 
-  
+      myElement.style.display = "none";
+    }
+
   }
 
-  async showCreateDraft(){
+  async showCreateDraft() {
     let supplierLoggedIn = await this.state.actor.isSupplierLoggedIn();
     let myElement = document.getElementById("createDraftBlock");
     if (supplierLoggedIn) {
-       myElement.style.display = "block"; // Show the element
+      myElement.style.display = "block"; // Show the element
     } else {
-      myElement.style.display = "none"; 
-   } 
-  
+      myElement.style.display = "none";
+    }
+
   }
 
 
@@ -618,9 +773,11 @@ class SupplyChain extends React.Component {
     return (
       <div>
         <h1>Supply Chain</h1>
+        <button onClick={() => this.installWasm()}>Create New Canister</button>
+        <input id="image" alt="image" onChange={(e) => this.wasmHandler(e)} type="file" />
         <button type="submit" id="login" onClick={() => this.login()}>Login</button>
         <h2 id="greeting"></h2>
-        <div id="addSupplier" style={{display: "none"}} >
+        <div id="addSupplier" style={{ display: "none" }} >
           <h3> Add supplier</h3>
           <table>
             <tbody>
@@ -635,72 +792,77 @@ class SupplyChain extends React.Component {
           <div id="supplierResponse"></div>
           <br></br>
         </div>
-        <div>  
-        <button onClick={() => this.getNodes()}>Get all nodes</button>
-        <div id="allNodes"></div>
-        <br></br>
-        <p>Get node by Id:</p>
-        <input type="number" required id="nodeId"></input>
-        <button onClick={() => this.getNodeById()}>Get Node</button>
-        <br></br>
-        {this.showNode()}
-        <br></br>
-        <div>
-          <p> Get Chain by last node ID</p>
-          <table>
-            <tbody>
-              <tr>
-                <td>Last node ID:</td><td><input type="number" required id="parentId"></input></td>
-              </tr>
-            </tbody>
-          </table>
-          <button onClick={() => this.getChildNodes()}>Show Child Nodes</button>
-          <div id="treeResult"></div>
-        </div>
+        <hr></hr>
         <br></br>
         <button onClick={() => this.getSuppliers()}>Get all suppliers</button>
         <div id="suppliers"></div>
-        <br></br>
-        <div id="draftsList" style={{display: "none"}}>
-         <h4>My drafts</h4>
-         {drafts.length == 0 &&(
-           <div>No drafts created</div>
-         )}
-        
-        {drafts.length > 0 &&(
+        <div>
+          <br></br>
+          <button onClick={() => this.getNodes()}>Get all nodes</button>
+          <div id="allNodes"></div>
+          <br></br>
+          <hr></hr>
+          <p>Get node by Id:</p>
+          <input type="number" required id="nodeId"></input>
+          <button onClick={() => this.getNodeById()}>Get Node</button>
+          <br></br>
+          {this.showNode()}
+          <br></br>
           <div>
-            {drafts.map((draft, index) => (
-              <div key={index}>
-                <label>{draft.title}</label>
-                <button type="button" onClick={() => this.setCurrentDraft(draft.id)}>
-                  Edit draft
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-        </div>
-          
-         
-        </div>
-      
-
-
-        <div id="createDraftBlock" style={{display: "none"}}>
-            <h3>Create Draft node:</h3>
+            <p> Get Chain by last node ID</p>
             <table>
               <tbody>
                 <tr>
-                  <td>Title:</td><td><input required id="newNodeTitle"></input></td>
+                  <td>Last node ID:</td><td><input type="number" required id="parentId"></input></td>
                 </tr>
               </tbody>
             </table>
-            <button onClick={() => this.createDraftNode()}>Create Draft Node</button>
-            <div id="createResult"></div>  
+            <button onClick={() => this.getChildNodes()}>Show Child Nodes</button>
+            <div id="treeResult"></div>
+          </div>
+          <br></br>
+
+          <br></br>
+          <div id="draftsList" style={{ display: "none" }}>
+            <h3>My drafts</h3>
+            {drafts.length == 0 && (
+              <div>No drafts created</div>
+            )}
+
+            {drafts.length > 0 && (
+              <div>
+                {drafts.map((draft, index) => (
+                  <div key={index}>
+                    <label>{draft.title}</label>
+                    <button type="button" onClick={() => this.setCurrentDraft(draft.id)}>
+                      Edit draft
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+
+        </div>
+
+
+
+        <div id="createDraftBlock" style={{ display: "none" }}>
+          <h3>Create Draft node:</h3>
+          <table>
+            <tbody>
+              <tr>
+                <td>Title:</td><td><input required id="newNodeTitle"></input></td>
+              </tr>
+            </tbody>
+          </table>
+          <button onClick={() => this.createDraftNode()}>Create Draft Node</button>
+          <div id="createResult"></div>
           <br></br>
         </div>
-    
-      
+
+
         <div>{this.showDraft()}</div>
       </div>
     );

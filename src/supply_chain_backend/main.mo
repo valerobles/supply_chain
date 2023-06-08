@@ -16,6 +16,8 @@ import Error "mo:base/Error";
 import Buffer "mo:base/Buffer";
 import DraftNode "draftNode";
 import Bool "mo:base/Bool";
+import Prim "mo:prim";
+import Cycles "mo:base/ExperimentalCycles";
 
 actor Main {
 
@@ -199,10 +201,8 @@ actor Main {
 
   };
 
-  
-
   public query (message) func isSupplierLoggedIn() : async Bool {
-   let ownerId = Principal.toText(message.caller);
+    let ownerId = Principal.toText(message.caller);
     if (suppliers.get(ownerId) == null) {
       return false;
     } else {
@@ -210,13 +210,13 @@ actor Main {
     };
   };
 
-  public query (message) func canAddNewSupplier(): async Bool {
+  public query (message) func canAddNewSupplier() : async Bool {
     let ownerId = Principal.toText(message.caller);
     if (suppliers.get(ownerId) != null or suppliers.size() == 0) {
-        return true;
-      } else {
-        return false;
-      };
+      return true;
+    } else {
+      return false;
+    };
   };
 
   public shared (message) func saveToDraft(nodeId : Nat, nextOwner : Types.Supplier, labelToText : [(Text, Text)], previousNodes : [Nat], assetKeys : [Text]) : async (Text) {
@@ -348,16 +348,16 @@ actor Main {
   public query (message) func greet() : async Text {
     let id = Principal.toText(message.caller);
     let sup = suppliers.get(id);
-  
+
     switch (sup) {
       case null {
-         return "Logged in with ID: " # id;
+        return "Logged in with ID: " # id;
       };
       case (?sup) {
         return "Logged in as: " # sup # "\n Logged in with ID: " # id;
       };
     };
-    
+
   };
 
   public query func getSuppliers() : async [Text] {
@@ -462,9 +462,6 @@ actor Main {
 
   };
 
-  // handle GET requests for Files/Images
-  // method is handles by Asset Canister interface
-  // https://internetcomputer.org/docs/current/references/asset-canister/
   public query func http_request(
     request : Types.HttpRequest
   ) : async Types.HttpResponse {
@@ -507,8 +504,6 @@ actor Main {
     };
   };
 
-  // Creates a new token for the first chunk of content,
-  // and then creates an actor reference of the Assets Canister to handle the streaming callback
   private func create_strategy(
     key : Text,
     index : Nat,
@@ -524,7 +519,7 @@ actor Main {
           http_request_streaming_callback : shared () -> async ();
         }; // create actor reference
 
-        return ? #Callback({
+        return ?#Callback({
           token;
           callback = canister.http_request_streaming_callback;
 
@@ -533,8 +528,6 @@ actor Main {
     };
   };
 
-  // //returns an HTTP response with the next chunk of content for the asset associated with the token
-  // method is handled by the Asset Canister interface
   public query func http_request_streaming_callback(
     st : Types.StreamingCallbackToken
   ) : async Types.StreamingCallbackHttpResponse {
@@ -554,7 +547,6 @@ actor Main {
     };
   };
 
-  // create a new streaming callback token for the next chunk of content
   private func create_token(
     key : Text,
     chunk_index : Nat,
@@ -569,6 +561,84 @@ actor Main {
         content_encoding = "gzip";
       };
     };
+  };
+
+  private stable var storageWasm : [Nat8] = [];
+
+  type CanisterSettings = {
+    controllers : ?[Principal];
+    compute_allocation : ?Nat;
+    memory_allocation : ?Nat;
+    freezing_threshold : ?Nat;
+  };
+
+  type canister_id = Principal;
+
+  let IC = actor "aaaaa-aa" : actor {
+
+    create_canister : {
+      settings : (s : CanisterSettings);
+    } -> async { canister_id : Principal };
+
+    canister_status : { canister_id : Principal } -> async {
+      // richer in ic.did
+      cycles : Nat;
+    };
+
+    install_code : ({
+      mode : { #install; #reinstall; #upgrade };
+      canister_id : canister_id;
+      wasm_module : Blob;
+      arg : Blob;
+    }) -> async ();
+
+    stop_canister : { canister_id : Principal } -> async ();
+
+    delete_canister : { canister_id : Principal } -> async ();
+  };
+
+  public func storageLoadWasm(blob : [Nat8]) : async ({
+    total : Nat;
+    chunks : Nat;
+  }) {
+    Debug.print("Hellooo");
+    // Issue: https://forum.dfinity.org/t/array-to-buffer-in-motoko/15880/15
+    let buffer : Buffer.Buffer<Nat8> = Buffer.fromArray<Nat8>(storageWasm);
+    let chunks : Buffer.Buffer<Nat8> = Buffer.fromArray<Nat8>(blob);
+    buffer.append(chunks);
+    storageWasm := Buffer.toArray(buffer);
+    Debug.print(Nat.toText(storageWasm.size()));
+
+    return {
+      total = storageWasm.size();
+      chunks = blob.size();
+    };
+  };
+
+  public func create() : async () {
+
+    let settings_ : CanisterSettings = {
+      controllers = ?[Principal.fromActor(Main)];
+      compute_allocation = null;
+      memory_allocation = null;
+      freezing_threshold = null;
+    };
+
+    Cycles.add(Cycles.balance() / 2);
+    let cid = await IC.create_canister({ settings = settings_ });
+    Debug.print("canister id " # Principal.toText(cid.canister_id));
+    let status = await IC.canister_status(cid);
+    Debug.print("canister " #Principal.toText(cid.canister_id) # " has " # Nat.toText(status.cycles) # " cycles");
+
+    await IC.install_code({
+      mode = #install;
+      canister_id = cid.canister_id;
+      wasm_module = Blob.fromArray(storageWasm);
+      arg = Blob.fromArray([]);
+    });
+    //await IC.stop_canister(cid);
+    //await IC.delete_canister(cid);
+    //Debug.print("balance after: " # Nat.toText(Cycles.balance()));
   };
 
 };

@@ -2,8 +2,8 @@
   "canisters": {
     "internet_identity": {
       "type": "custom",
-      "candid": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity.did",
-      "wasm": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity_dev.wasm.gz",
+      "candid": "https://github.com/dfinity/internet-identity/releases/download/release-2023-05-30/internet_identity.did",
+      "wasm": "https://github.com/dfinity/internet-identity/releases/download/release-2023-05-30/internet_identity_dev.wasm.gz",
       "remote": {
         "id": {
           "ic": "rdmx6-jaaaa-aaaaa-aaadq-cai"
@@ -13,6 +13,10 @@
     },
     "supply_chain_backend": {
       "main": "src/supply_chain_backend/main.mo",
+      "type": "motoko"
+    },
+    "dynamic": {
+      "main": "src/dynamic/main.mo",
       "type": "motoko"
     },
     "supply_chain_frontend": {
