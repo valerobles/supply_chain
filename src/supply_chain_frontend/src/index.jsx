@@ -1,10 +1,10 @@
 import { createActor, supply_chain_backend } from "../../declarations/supply_chain_backend";
 import { createActor, assets_db } from "../../declarations/assets_db";
 import { AuthClient } from "@dfinity/auth-client"
-import { HttpAgent, createCanister, installCode, Actor, Agent } from "@dfinity/agent";
+import { HttpAgent } from "@dfinity/agent";
 import * as React from 'react';
 import { render } from 'react-dom';
-import React, { useState } from 'react';
+import React from 'react';
 
 
 
@@ -41,6 +41,7 @@ class SupplyChain extends React.Component {
   }
 
   async wasmHandler(event) {
+    // TODO check if uploaded file has .wasm extension
     this.state.wasm = event.target.files[0];
     console.log(this.state.wasm)
 
@@ -49,7 +50,7 @@ class SupplyChain extends React.Component {
   async installWasm() {
     const promises = [];
 
-    console.log(`Installing wasm code in manager.`);
+    console.log("Upload start of wasm module");
 
     const chunkSize_ = 700000;
 
@@ -63,17 +64,17 @@ class SupplyChain extends React.Component {
       ));
     }
 
-    const c = await Promise.all(promises);
+    const chunksSize = await Promise.all(promises);
 
-    console.log(c);
+    console.log(chunksSize);
 
 
 
-    console.log(`Installation done.`);
+    console.log("Wasm module upload done");
   };
 
   async uploadWasm(chunk) {
-    return await this.state.actor.storageLoadWasm(
+    return await this.state.actor_assets.storageLoadWasm(
      [...new Uint8Array(await chunk.arrayBuffer())]
     );
   }
@@ -388,7 +389,8 @@ class SupplyChain extends React.Component {
     this.state.actor_assets = createActor(process.env.ASSETS_DB_CANISTER_ID, {
       agent,
     });
-    
+
+    const t = await this.state.actor_assets.greet();
     const greeting = await this.state.actor.greet();
     document.getElementById("greeting").innerText = greeting;
 

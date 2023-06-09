@@ -411,6 +411,7 @@ actor Main {
 
   // puts the given chunk in the chunks hashmap together with the created chunkID. It then returns the chunkID as a record for frontend
   public func create_chunk(chunk : Types.Chunk) : async { chunk_id : Nat } {
+    // TODO call the assets_db canister for create_chunk
     nextChunkID := nextChunkID + 1;
     chunks.put(nextChunkID, chunk);
 
@@ -424,6 +425,8 @@ actor Main {
     chunk_ids : [Nat];
     content_type : Text;
   }) : async () {
+
+    // TODO call the assets_db canister for commit_batch
 
     let content_chunks = Buffer.Buffer<[Nat8]>(4); //mutable array
 
@@ -562,7 +565,5 @@ actor Main {
       };
     };
   };
-
-
 
 };

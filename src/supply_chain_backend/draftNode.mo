@@ -21,7 +21,7 @@ class DraftNode(id_: Nat, owner_ : Types.Supplier, title_ : Text) {
 
     public var previousNodesIDs: [Nat] = [0];
 
-    //e.g. id/assets/fileName.png
+    //e.g. nodeId/assets/fileName.png
     public var assetKeys : [Text] = [];
 
 
