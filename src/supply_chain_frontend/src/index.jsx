@@ -1,6 +1,6 @@
 import { createActor, supply_chain_backend } from "../../declarations/supply_chain_backend";
+import { createActor, assets_db } from "../../declarations/assets_db";
 import { AuthClient } from "@dfinity/auth-client"
-import { Ed25519KeyIdentity } from '@dfinity/identity';
 import { HttpAgent, createCanister, installCode, Actor, Agent } from "@dfinity/agent";
 import * as React from 'react';
 import { render } from 'react-dom';
@@ -17,6 +17,7 @@ class SupplyChain extends React.Component {
     super(props);
     this.state = {
       actor: supply_chain_backend,
+      actor_assets: assets_db,
       file: null,
       wasm: null,
       drafts: [{ id: '', title: '' }],
@@ -45,81 +46,19 @@ class SupplyChain extends React.Component {
 
   }
 
-
-  //     // Fill array with the uploadChunkt function. The array be executed later
-  //     // "uploadChunk" takees the batch_name(file name) and the chunk
-  //     promises.push(this.uploadChunk({
-  //       batch_name,
-  //       chunk
-  //     }));
-  //   }
-
-  //   // Executes the "uploadChunk" defined in the promises array. Returns the chunkIDs created in the backend
-  //   const chunkIds = await Promise.all(promises);
-
-  //   console.log(chunkIds);
-
-  //   const node_id = BigInt(currentDraft.id)
-
-  //   //Finish upload by commiting file batch to be saved in backend canister with the current node ID
-  //   await this.state.actor.commit_batch({
-  //     node_id,
-  //     batch_name,
-  //     chunk_ids: chunkIds.map(({ chunk_id }) => chunk_id),
-  //     content_type: this.state.file.type
-  //   })
-
-  //   console.log('uploaded');
-
-  //   const assetKey = [...currentDraft.draftFile, "/" + currentDraft.id + "/assets/" + batch_name]
-  //   this.setState({
-  //     currentDraft: {
-  //       ...this.state.currentDraft,
-  //       draftFile: assetKey
-  //     }
-  //   });
-
-
-  //   // Once the files has been saved in the backend canister it can be loaded to be seen on the frontend
-  //   this.loadImage(currentDraft.draftFile, true);
-  // }
-
-  // // Takes a record of batch_name and chunk
-  // // calls the backend canister method "create_chunk"
-  // //converts chunk of type Blob into a Uint8Array to send it to backend canister. Motoko reads it as [Nat8]
-  // async uploadChunk({ batch_name, chunk }) {
-  //   return this.state.actor.create_chunk({
-  //     batch_name,
-  //     content: [...new Uint8Array(await chunk.arrayBuffer())]
-  //   });
-  // }
-
-
   async installWasm() {
     const promises = [];
 
     console.log(`Installing wasm code in manager.`);
-    //const response = await fetch('/Users/valeria/Documents/Internet Computer/IP6/coffee/.dfx/local/canisters/supply_chain_backend/supply_chain_backend.wasm');
-    //console.log(response);
-    //const wasmModule = await response.blob();
-    //console.log(wasmModule);
-    //const buffer = await response.arrayBuffer();
-    //const uint = new Uint8Array(this.state.wasm);
-    //console.log(uint);
-
 
     const chunkSize_ = 700000;
 
-    // const upload = async (chunks) => {
-    //   const result = await this.state.actor.storageLoadWasm(chunks);
-    //   console.log('Chunks:', result);
-    // };
 
     for (let start = 0; start < this.state.wasm.size; start += chunkSize_) {
-      const chunk = this.state.wasm.slice(start, start + chunkSize_); // returns a Blob obj
+      const chunk = this.state.wasm.slice(start, start + chunkSize_); 
       console.log(chunk);
 
-      promises.push(this.installW(
+      promises.push(this.uploadWasm(
         chunk
       ));
     }
@@ -133,60 +72,12 @@ class SupplyChain extends React.Component {
     console.log(`Installation done.`);
   };
 
-  async installW(chunk) {
+  async uploadWasm(chunk) {
     return await this.state.actor.storageLoadWasm(
      [...new Uint8Array(await chunk.arrayBuffer())]
     );
   }
 
-  async handleCanisterCreation() {
-    try {
-      const agent = await this.getAgent();
-      const wasmM = await this.getWasm();
-      const newCanisterID = await this.createNewCanister(wasmM, agent);
-      console.log("new canister ID: ", newCanisterID);
-    } catch (error) {
-      console.error("Error in creation:", error)
-    }
-
-  }
-
-
-  async getWasm() {
-
-    try {
-      const response = await fetch('.dfx/local/canisters/supply_chain_backend/supply_chain_backend.wasm');
-      const buffer = await response.arrayBuffer();
-      const uint = new Uint8Array(buffer);
-
-      return uint;
-
-    } catch (error) {
-      console.error('Error:', error);
-    }
-  }
-
-  async getAgent() {
-
-    const identity = Ed25519KeyIdentity.generate();
-
-    const agent = Promise.resolve(new HttpAgent({ host: 'http://127.0.0.1:4943', identity })).then(
-      async agent => {
-        await agent.fetchRootKey();
-        return agent;
-      },
-    );
-
-    return agent;
-  }
-
-  async createNewCanister(wasm, agent) {
-
-    const canisterId = await Actor.createCanister({ agent });
-    await Actor.install({ wasm }, { canisterId, agent: agent });
-
-    return canisterId;
-  }
 
 
   handleAddField = () => {
@@ -493,6 +384,11 @@ class SupplyChain extends React.Component {
     this.state.actor = createActor(process.env.SUPPLY_CHAIN_BACKEND_CANISTER_ID, {
       agent,
     });
+
+    this.state.actor_assets = createActor(process.env.ASSETS_DB_CANISTER_ID, {
+      agent,
+    });
+    
     const greeting = await this.state.actor.greet();
     document.getElementById("greeting").innerText = greeting;
 
