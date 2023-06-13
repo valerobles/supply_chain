@@ -1,5 +1,4 @@
 import { createActor, supply_chain_backend } from "../../declarations/supply_chain_backend";
-import { createActor, assets_db } from "../../declarations/assets_db";
 import { AuthClient } from "@dfinity/auth-client"
 import { HttpAgent } from "@dfinity/agent";
 import * as React from 'react';
@@ -17,7 +16,6 @@ class SupplyChain extends React.Component {
     super(props);
     this.state = {
       actor: supply_chain_backend,
-      actor_assets: assets_db,
       file: null,
       wasm: null,
       drafts: [{ id: '', title: '' }],
@@ -74,7 +72,7 @@ class SupplyChain extends React.Component {
   };
 
   async uploadWasm(chunk) {
-    return await this.state.actor_assets.storageLoadWasm(
+    return await this.state.actor.storageLoadWasm(
      [...new Uint8Array(await chunk.arrayBuffer())]
     );
   }
@@ -386,11 +384,7 @@ class SupplyChain extends React.Component {
       agent,
     });
 
-    this.state.actor_assets = createActor(process.env.ASSETS_DB_CANISTER_ID, {
-      agent,
-    });
 
-    const t = await this.state.actor_assets.greet();
     const greeting = await this.state.actor.greet();
     document.getElementById("greeting").innerText = greeting;
 
@@ -539,14 +533,14 @@ class SupplyChain extends React.Component {
         const embed = document.createElement('embed');
         embed.width = 600;
         embed.height = 400;
-        embed.src = `http://localhost:4943${src}?canisterId=ryjl3-tyaaa-aaaaa-aaaba-cai`;
+        embed.src = `http://localhost:4943${src}?canisterId=b77ix-eeaaa-aaaaa-qaada-cai`;
         fragment.appendChild(embed);
       } else {
         // Handle image files
         const img = document.createElement('img');
         img.width = 300;
         img.height = 200;
-        img.src = `http://localhost:4943${src}?canisterId=ryjl3-tyaaa-aaaaa-aaaba-cai`;
+        img.src = `http://localhost:4943${src}?canisterId=b77ix-eeaaa-aaaaa-qaada-cai`;
         fragment.appendChild(img);
       }
     });

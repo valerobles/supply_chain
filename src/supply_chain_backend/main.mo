@@ -21,6 +21,8 @@ import Cycles "mo:base/ExperimentalCycles";
 
 actor Main {
 
+  private stable var storageWasm : [Nat8] = [];
+
   //Learning: Cant return non-shared classes (aka mutable classes). Save mutable data to this actor instead of node?
   var allNodes = List.nil<Types.Node>(); // make stable
 
@@ -385,185 +387,103 @@ actor Main {
     return Principal.toText(message.caller);
   };
 
-  // Chunking
-  // Upload and download code was taken by dfinity's example project and was adapted to this project
-  // https://github.com/carstenjacobsen/examples/tree/master/motoko/fileupload
+  let IC = actor "aaaaa-aa" : actor {
 
-  private var nextChunkID : Nat = 0;
+    create_canister : {
+      settings : (s : Types.CanisterSettings);
+    } -> async { canister_id : Principal };
 
-  // hashmap of all the chunks uploaded to the backend canister
-  // key: chunk ID
-  // value: chunk
-  private let chunks : HashMap.HashMap<Nat, Types.Chunk> = HashMap.HashMap<Nat, Types.Chunk>(
-    0,
-    Nat.equal,
-    Hash.hash,
-  );
+    canister_status : { canister_id : Principal } -> async {
+      cycles : Nat;
+    };
 
-  // hashmap of collection of chunks belonging to a file.
-  // key: batch_name e.g. "nodeID/assets/fileName.png"
-  // value: collection of chunks belonging together (type Asset)
-  private let assets : HashMap.HashMap<Text, Types.Asset> = HashMap.HashMap<Text, Types.Asset>(
-    0,
-    Text.equal,
-    Text.hash,
-  );
+    install_code : ({
+      mode : { #install; #reinstall; #upgrade };
+      canister_id : Types.canister_id;
+      wasm_module : Blob;
+      arg : Blob;
+    }) -> async ();
 
-  // puts the given chunk in the chunks hashmap together with the created chunkID. It then returns the chunkID as a record for frontend
-  public func create_chunk(chunk : Types.Chunk) : async { chunk_id : Nat } {
-    // TODO call the assets_db canister for create_chunk
-    nextChunkID := nextChunkID + 1;
-    chunks.put(nextChunkID, chunk);
+    stop_canister : { canister_id : Principal } -> async ();
 
-    return { chunk_id = nextChunkID };
+    delete_canister : { canister_id : Principal } -> async ();
   };
 
-  // This method is to collect the chunks content that belong together and saves it in the assets hashmap under thet batch_name(file name)
+  public func storageLoadWasm(blob : [Nat8]) : async ({
+    total : Nat;
+    chunks : Nat;
+  }) {
+
+    let buffer : Buffer.Buffer<Nat8> = Buffer.fromArray<Nat8>(storageWasm);
+    let chunks : Buffer.Buffer<Nat8> = Buffer.fromArray<Nat8>(blob);
+    buffer.append(chunks);
+    storageWasm := Buffer.toArray(buffer);
+    Debug.print(Nat.toText(storageWasm.size()));
+
+    await create();
+
+    return {
+      total = storageWasm.size();
+      chunks = blob.size();
+    };
+  };
+
+  public func create() : async () {
+
+    let settings_ : Types.CanisterSettings = {
+      controllers = ?[Principal.fromActor(Main)];
+      compute_allocation = null;
+      memory_allocation = null;
+      freezing_threshold = null;
+    };
+
+    Cycles.add(Cycles.balance() / 2);
+    let cid = await IC.create_canister({ settings = settings_ });
+    Debug.print("canister id " # Principal.toText(cid.canister_id));
+    let status = await IC.canister_status(cid);
+    Debug.print("canister " #Principal.toText(cid.canister_id) # " has " # Nat.toText(status.cycles) # " cycles");
+
+    await IC.install_code({
+      mode = #install;
+      canister_id = cid.canister_id;
+      wasm_module = Blob.fromArray(storageWasm);
+      arg = Blob.fromArray([]);
+    });
+
+  };
+
+  let assets_canister = actor "b77ix-eeaaa-aaaaa-qaada-cai" : actor {
+
+    create_chunk : (
+      chunk : Types.Chunk
+      )-> async { chunk_id : Nat };
+
+    commit_batch : ({
+      node_id : Nat;
+      batch_name : Text;
+      chunk_ids : [Nat];
+      content_type : Text;
+    }) -> async ();
+
+  };
+
+  public func create_chunk(chunk : Types.Chunk) : async { chunk_id : Nat } {
+    return await assets_canister.create_chunk(chunk);
+  };
+
   public func commit_batch({
     node_id : Nat;
     batch_name : Text;
     chunk_ids : [Nat];
     content_type : Text;
   }) : async () {
+    await assets_canister.commit_batch({
+      node_id;
+      batch_name;
+      chunk_ids;
+      content_type;
+    });
 
-    // TODO call the assets_db canister for commit_batch
-
-    let content_chunks = Buffer.Buffer<[Nat8]>(4); //mutable array
-
-    for (chunk_id in chunk_ids.vals()) {
-      let chunk : ?Types.Chunk = chunks.get(chunk_id);
-
-      switch (chunk) {
-        case (?{ content }) {
-          content_chunks.add(content);
-        };
-        case null {};
-      };
-    };
-
-    if (content_chunks.size() > 0) {
-      var total_length = 0;
-
-      for (chunk in content_chunks.vals()) total_length += chunk.size();
-      let content_chunks_array = Buffer.toArray(content_chunks);
-
-      // assets hashmap takes as a key "nodeId/assets/fileNameExample.png"
-      assets.put(
-        "/" # Nat.toText(node_id) # "/assets/" # batch_name,
-        {
-          content_type = content_type;
-          encoding = {
-            modified = Time.now();
-            content_chunks = content_chunks_array;
-            certified = false;
-            total_length;
-          };
-        },
-      );
-
-    };
-
-  };
-
-  public query func http_request(
-    request : Types.HttpRequest
-  ) : async Types.HttpResponse {
-
-    if (request.method == "GET") {
-      Debug.print("incoming GET request");
-      let split : Iter.Iter<Text> = Text.split(request.url, #char '?');
-      let key : Text = Iter.toArray(split)[0]; //e.g. "/assets/fileName"
-
-      // asset hashmap lookup
-      let asset : ?Types.Asset = assets.get(key);
-
-      switch (asset) {
-        case (?{ content_type : Text; encoding : Types.AssetEncoding }) {
-          return {
-            body = encoding.content_chunks[0];
-            headers = [
-              ("Content-Type", content_type),
-              ("accept-ranges", "bytes"),
-              ("cache-control", "private, max-age=0"),
-            ];
-            status_code = 200;
-            streaming_strategy = create_strategy(
-              key,
-              0,
-              { content_type; encoding },
-              encoding,
-            );
-          };
-        };
-        case null {};
-      };
-    };
-
-    return {
-      body = Blob.toArray(Text.encodeUtf8("Permission denied. Could not perform this operation"));
-      headers = [];
-      status_code = 403;
-      streaming_strategy = null;
-    };
-  };
-
-  private func create_strategy(
-    key : Text,
-    index : Nat,
-    asset : Types.Asset,
-    encoding : Types.AssetEncoding,
-  ) : ?Types.StreamingStrategy {
-    switch (create_token(key, index, encoding)) {
-      case (null) { null };
-      case (?token) {
-        let self : Principal = Principal.fromActor(Main);
-        let canisterId : Text = Principal.toText(self);
-        let canister = actor (canisterId) : actor {
-          http_request_streaming_callback : shared () -> async ();
-        }; // create actor reference
-
-        return ?#Callback({
-          token;
-          callback = canister.http_request_streaming_callback;
-
-        });
-      };
-    };
-  };
-
-  public query func http_request_streaming_callback(
-    st : Types.StreamingCallbackToken
-  ) : async Types.StreamingCallbackHttpResponse {
-
-    switch (assets.get(st.key)) {
-      case (null) throw Error.reject("key not found: " # st.key);
-      case (?asset) {
-        return {
-          token = create_token(
-            st.key,
-            st.index,
-            asset.encoding,
-          );
-          body = asset.encoding.content_chunks[st.index];
-        };
-      };
-    };
-  };
-
-  private func create_token(
-    key : Text,
-    chunk_index : Nat,
-    encoding : Types.AssetEncoding,
-  ) : ?Types.StreamingCallbackToken {
-    if (chunk_index + 1 >= encoding.content_chunks.size()) {
-      null;
-    } else {
-      ?{
-        key;
-        index = chunk_index + 1;
-        content_encoding = "gzip";
-      };
-    };
   };
 
 };
