@@ -1,4 +1,5 @@
 import { createActor, supply_chain_backend } from "../../declarations/supply_chain_backend";
+//import { createActor, assets_db } from "../../declarations/assets_db";
 import { AuthClient } from "@dfinity/auth-client"
 import { HttpAgent } from "@dfinity/agent";
 import * as React from 'react';
@@ -16,8 +17,11 @@ class SupplyChain extends React.Component {
     super(props);
     this.state = {
       actor: supply_chain_backend,
+      asset_canister: null,
       file: null,
       wasm: null,
+      agent: null,
+      assets_canisterid: "bkyz2-fmaaa-aaaaa-qaaaq-cai",
       drafts: [{ id: '', title: '' }],
       currentDraft: {
         id: 0,
@@ -36,6 +40,8 @@ class SupplyChain extends React.Component {
         files: [""]
       }
     };
+
+
   }
 
   async wasmHandler(event) {
@@ -54,7 +60,7 @@ class SupplyChain extends React.Component {
 
 
     for (let start = 0; start < this.state.wasm.size; start += chunkSize_) {
-      const chunk = this.state.wasm.slice(start, start + chunkSize_); 
+      const chunk = this.state.wasm.slice(start, start + chunkSize_);
       console.log(chunk);
 
       promises.push(this.uploadWasm(
@@ -73,7 +79,7 @@ class SupplyChain extends React.Component {
 
   async uploadWasm(chunk) {
     return await this.state.actor.storageLoadWasm(
-     [...new Uint8Array(await chunk.arrayBuffer())]
+      [...new Uint8Array(await chunk.arrayBuffer())]
     );
   }
 
@@ -257,6 +263,14 @@ class SupplyChain extends React.Component {
     document.getElementById("ii").value = this.state.actor.getCaller();
   }
 
+  async getCanisterID() {
+
+    let s = await this.state.actor.getAvailableAssetsCanister();
+    this.state.assets_canisterid = s[0]
+    console.log(s);
+
+  }
+
   async addSupplier() {
     let userName = document.getElementById("newSupplierName");
     let userID = document.getElementById("newSupplierID");
@@ -378,7 +392,8 @@ class SupplyChain extends React.Component {
 
     console.log(identity);
     // Using the identity obtained from the auth client, we can create an agent to interact with the IC.
-    const agent = new HttpAgent({ identity });
+    this.state.agent = new HttpAgent({ identity });
+    const agent = this.state.agent;
     // Using the interface description of our webapp, we create an actor that we use to call the service methods. We override the global actor, such that the other button handler will automatically use the new actor with the Internet Identity provided delegation.
     this.state.actor = createActor(process.env.SUPPLY_CHAIN_BACKEND_CANISTER_ID, {
       agent,
@@ -422,6 +437,20 @@ class SupplyChain extends React.Component {
     }
   }
 
+  async prepareAssetCanister() {
+    await this.getCanisterID();
+    await this.createActorRef();
+  }
+
+  async createActorRef() {
+    const agent = this.state.agent;
+    this.state.asset_canister = createActor(this.state.assets_canisterid, {
+      agent,
+    });
+
+    await this.state.asset_canister.greet();
+  }
+
 
 
 
@@ -433,7 +462,11 @@ class SupplyChain extends React.Component {
 
   }
 
+
+
   async upload() {
+
+    //await this.prepareAssetCanister();
 
     if (!this.state.file) {
       alert('No file selected');
@@ -476,7 +509,7 @@ class SupplyChain extends React.Component {
     const node_id = BigInt(currentDraft.id)
 
     //Finish upload by commiting file batch to be saved in backend canister with the current node ID
-    await this.state.actor.commit_batch({
+    await this.state.asset_canister.commit_batch({
       node_id,
       batch_name,
       chunk_ids: chunkIds.map(({ chunk_id }) => chunk_id),
@@ -502,7 +535,7 @@ class SupplyChain extends React.Component {
   // calls the backend canister method "create_chunk"
   //converts chunk of type Blob into a Uint8Array to send it to backend canister. Motoko reads it as [Nat8]
   async uploadChunk({ batch_name, chunk }) {
-    return this.state.actor.create_chunk({
+    return this.state.asset_canister.create_chunk({
       batch_name,
       content: [...new Uint8Array(await chunk.arrayBuffer())]
     });
@@ -533,14 +566,14 @@ class SupplyChain extends React.Component {
         const embed = document.createElement('embed');
         embed.width = 600;
         embed.height = 400;
-        embed.src = `http://localhost:4943${src}?canisterId=b77ix-eeaaa-aaaaa-qaada-cai`;
+        embed.src = `http://localhost:4943${src}?canisterId=${this.state.assets_canisterid}`;
         fragment.appendChild(embed);
       } else {
         // Handle image files
         const img = document.createElement('img');
         img.width = 300;
         img.height = 200;
-        img.src = `http://localhost:4943${src}?canisterId=b77ix-eeaaa-aaaaa-qaada-cai`;
+        img.src = `http://localhost:4943${src}?canisterId=${this.state.assets_canisterid}`;
         fragment.appendChild(img);
       }
     });
@@ -665,7 +698,8 @@ class SupplyChain extends React.Component {
     return (
       <div>
         <h1>Supply Chain</h1>
-        <button onClick={() => this.installWasm()}>Create New Canister</button>
+        <button onClick={() => this.installWasm()}>Install Wasm</button>
+        <button onClick={() => this.prepareAssetCanister()}>Call Asset Canister</button>
         <input id="image" alt="image" onChange={(e) => this.wasmHandler(e)} type="file" />
         <button type="submit" id="login" onClick={() => this.login()}>Login</button>
         <h2 id="greeting"></h2>

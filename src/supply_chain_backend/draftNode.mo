@@ -1,16 +1,10 @@
 import Types "./types";
-import HashMap "mo:base/HashMap";
-import Hash "mo:base/Hash";
 import Text "mo:base/Text";
 import List "mo:base/List";
 
 
 class DraftNode(id_: Nat, owner_ : Types.Supplier, title_ : Text) {
 
-
-    func natHash(n : Text) : Hash.Hash {
-        Text.hash(n);
-  };
 
     public let id = id_;
     public let owner = owner_;
@@ -21,7 +15,7 @@ class DraftNode(id_: Nat, owner_ : Types.Supplier, title_ : Text) {
 
     public var previousNodesIDs: [Nat] = [0];
 
-    //e.g. nodeId/assets/fileName.png
+    // nodeId/assets/fileName.png -> canisterId
     public var assetKeys : [Text] = [];
 
 

@@ -22,7 +22,8 @@
     },
     "supply_chain_frontend": {
       "dependencies": [
-        "supply_chain_backend"
+        "supply_chain_backend",
+        "assets_db"
       ],
       "frontend": {
         "entrypoint": "src/supply_chain_frontend/src/index.html"

@@ -15,16 +15,17 @@ import Types "types";
 import Time "mo:base/Time";
 import Error "mo:base/Error";
 
-
 actor Asset_Management {
 
+  //let ci : Text = Principal.toText(Principal.fromActor(Asset_Management));
 
-    public query func greet() : async () {
-        Debug.print("Hello from Assets Canister");
-    };
+  
 
+  public query func greet() : async () {
+    Debug.print("Hello from Assets Canister with id " # Principal.toText(Principal.fromActor(Asset_Management)));
+  };
 
-   // Chunking
+  // Chunking
   // Upload and download code was taken by dfinity's example project and was adapted to this project
   // https://github.com/carstenjacobsen/examples/tree/master/motoko/fileupload
 
@@ -205,5 +206,4 @@ actor Asset_Management {
     };
   };
 
-    
 };

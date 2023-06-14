@@ -22,6 +22,7 @@ import Cycles "mo:base/ExperimentalCycles";
 actor Main {
 
   private stable var storageWasm : [Nat8] = [];
+  stable var canister_ids = List.nil<Text>();
 
   //Learning: Cant return non-shared classes (aka mutable classes). Save mutable data to this actor instead of node?
   var allNodes = List.nil<Types.Node>(); // make stable
@@ -387,7 +388,12 @@ actor Main {
     return Principal.toText(message.caller);
   };
 
+  
+  canister_ids := List.push<Text>("bkyz2-fmaaa-aaaaa-qaaaq-cai", canister_ids);
+
   let IC = actor "aaaaa-aa" : actor {
+
+    // TODO add method that checks memory availability
 
     create_canister : {
       settings : (s : Types.CanisterSettings);
@@ -420,8 +426,6 @@ actor Main {
     storageWasm := Buffer.toArray(buffer);
     Debug.print(Nat.toText(storageWasm.size()));
 
-    await create();
-
     return {
       total = storageWasm.size();
       chunks = blob.size();
@@ -440,6 +444,7 @@ actor Main {
     Cycles.add(Cycles.balance() / 2);
     let cid = await IC.create_canister({ settings = settings_ });
     Debug.print("canister id " # Principal.toText(cid.canister_id));
+    canister_ids := List.push<Text>(Principal.toText(cid.canister_id), canister_ids);
     let status = await IC.canister_status(cid);
     Debug.print("canister " #Principal.toText(cid.canister_id) # " has " # Nat.toText(status.cycles) # " cycles");
 
@@ -452,23 +457,28 @@ actor Main {
 
   };
 
-  let assets_canister = actor "b77ix-eeaaa-aaaaa-qaada-cai" : actor {
+  var asset_canisters = List.nil<Types.Asset_Canister>();
 
-    create_chunk : (
-      chunk : Types.Chunk
-      )-> async { chunk_id : Nat };
+  let AC : Types.Asset_Canister = actor ("b77ix-eeaaa-aaaaa-qaada-cai");
 
-    commit_batch : ({
-      node_id : Nat;
-      batch_name : Text;
-      chunk_ids : [Nat];
-      content_type : Text;
-    }) -> async ();
+  asset_canisters := List.push<Types.Asset_Canister>(AC, asset_canisters);
 
+  public query func getAvailableAssetsCanister() : async ?Text {
+    // TODO
+    // add logic to find available Canister for upload
+    // if none available, create new canister
+    let size : Nat = List.size<Text>(canister_ids);
+    Debug.print(Nat.toText(size));
+  
+    return List.get<Text>(canister_ids,0);
   };
 
-  public func create_chunk(chunk : Types.Chunk) : async { chunk_id : Nat } {
-    return await assets_canister.create_chunk(chunk);
+  public func create_chunk(chunk : Types.Chunk, asset_canister_id : Text) : async {
+    chunk_id : Nat;
+  } {
+
+    return await AC.create_chunk(chunk);
+
   };
 
   public func commit_batch({
@@ -477,7 +487,7 @@ actor Main {
     chunk_ids : [Nat];
     content_type : Text;
   }) : async () {
-    await assets_canister.commit_batch({
+    await AC.commit_batch({
       node_id;
       batch_name;
       chunk_ids;
