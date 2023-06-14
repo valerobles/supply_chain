@@ -119,7 +119,14 @@ actor Main {
 
   //TODO next owner gets notified to create node containing this one and maybe others
   //Creates a new Node, increments nodeId BEFORE creating it.
-  private func createNode(id : Nat, previousNodes : List.List<Types.Node>, title : Text, currentOwner : Types.Supplier, nextOwner : Types.Supplier, labelToText : [(Text, Text)], assetKeys : [Text]) : (Types.Node) {
+  private func createNode(
+    id : Nat, 
+    previousNodes : List.List<Types.Node>, 
+    title : Text, 
+    currentOwner : Types.Supplier, 
+    nextOwner : Types.Supplier, 
+    labelToText : [(Text, Text)], 
+    assetKeys : [(Text,Text)]) : (Types.Node) {
 
     {
       nodeId = id;
@@ -178,11 +185,11 @@ actor Main {
 
   //Returns all information of a node excluding id/childnodes
   //Values are all empty if node does not exist
-  public query func getNodeById(id : Nat) : async (Text, Types.Supplier, Types.Supplier, [(Text, Text)], [Text]) {
+  public query func getNodeById(id : Nat) : async (Text, Types.Supplier, Types.Supplier, [(Text, Text)], [(Text,Text)]) {
     let node = Utils.getNodeById(id, allNodes);
     switch (node) {
       case null {
-        ("", { userName = ""; userId = "" }, { userName = ""; userId = "" }, [("", "")], [""]);
+        ("", { userName = ""; userId = "" }, { userName = ""; userId = "" }, [("", "")], [("","")]);
       };
       case (?node) {
         return (node.title, node.owner, node.nextOwner, node.texts, node.assetKeys);
@@ -222,7 +229,7 @@ actor Main {
     };
   };
 
-  public shared (message) func saveToDraft(nodeId : Nat, nextOwner : Types.Supplier, labelToText : [(Text, Text)], previousNodes : [Nat], assetKeys : [Text]) : async (Text) {
+  public shared (message) func saveToDraft(nodeId : Nat, nextOwner : Types.Supplier, labelToText : [(Text, Text)], previousNodes : [Nat], assetKeys : [(Text,Text)]) : async (Text) {
     let ownerId = Principal.toText(message.caller);
     // assert not Principal.isAnonymous(message.caller);
     assert not (suppliers.get(ownerId) == null);
@@ -276,10 +283,10 @@ actor Main {
     };
     return Buffer.toArray(listOfDraft);
   };
-  public query (message) func getDraftById(id : Nat) : async (Nat, Text, Types.Supplier, [(Text, Text)], [Nat], [Text]) {
+  public query (message) func getDraftById(id : Nat) : async (Nat, Text, Types.Supplier, [(Text, Text)], [Nat], [(Text,Text)]) {
     let ownerId = Principal.toText(message.caller);
     var draftList = supplierToDraftNodeID.get(ownerId);
-    let emptyDraft = (0, "", { userName = ""; userId = "" }, [("", "")], [0], [""]);
+    let emptyDraft = (0, "", { userName = ""; userId = "" }, [("", "")], [0], [("","")]);
     switch (draftList) {
       case null {
         return emptyDraft;

@@ -14,7 +14,7 @@ module {
         nextOwner : Supplier; //Holds information to this node
         texts : [(Text, Text)];
         previousNodes : L.List<Node>;
-        assetKeys : [Text];
+        assetKeys : [(Text, Text)];
     };
 
     public type SupplierToDraftNodeID = {
@@ -39,7 +39,6 @@ module {
     public type Asset_Canister = actor {
 
         get_my_canister_id : () -> async (Text);
-
 
         create_chunk : (
             chunk : Chunk

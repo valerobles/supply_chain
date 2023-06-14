@@ -29,7 +29,7 @@ class SupplyChain extends React.Component {
         nextOwner: { userName: '', userId: '' },
         labelToText: [{ label: '', text: '' }],
         previousNodesIDs: [0],
-        draftFile: [""]
+        draftFile: [{ url: '', canisterId: '' }]
       },
       currentNode: {
         id: 0,
@@ -37,7 +37,7 @@ class SupplyChain extends React.Component {
         owner: { userName: '', userId: '' },
         nextOwner: { userName: '', userId: '' },
         labelToText: [{ label: '', text: '' }],
-        files: [""]
+        files: [{ url: '', canisterId: '' }]
       }
     };
 
@@ -172,7 +172,10 @@ class SupplyChain extends React.Component {
         label,
         text
       }));
-      currentNode.files = node[4];
+      currentNode.files = node[4].map(([url, canisterId]) => ({
+        url,
+        canisterId
+      }));
       this.setState({ currentNode: currentNode });
 
       this.loadImage(currentNode.files, false);
@@ -228,7 +231,7 @@ class SupplyChain extends React.Component {
         nextOwner: { userName: '', userId: '' },
         labelToText: [{ label: '', text: '' }],
         previousNodesIDs: [0],
-        draftFile: [""]
+        draftFile: [{ url: '', canisterId: '' }]
       }
       this.getDraftBySupplier()
     }
@@ -250,7 +253,7 @@ class SupplyChain extends React.Component {
       { userName: currentDraft.nextOwner.userName, userId: currentDraft.nextOwner.userId },
       currentDraft.labelToText.map(({ label, text }) => [label, text]),
       currentDraft.previousNodesIDs,
-      currentDraft.draftFile,
+      currentDraft.draftFile.map(({ url, canisterId }) => [url, canisterId]),
     ];
 
     let response = await this.state.actor.saveToDraft(...currentD);
@@ -271,7 +274,7 @@ class SupplyChain extends React.Component {
 
     let s = await this.state.actor.getAvailableAssetsCanister();
     this.state.assets_canisterid = s[0]
-    console.log(s);
+    return this.state.assets_canisterid;
 
   }
 
@@ -442,8 +445,10 @@ class SupplyChain extends React.Component {
   }
 
   async prepareAssetCanister() {
-    await this.getCanisterID();
+    let available_asset_canister = await this.getCanisterID();
     await this.createActorRef();
+
+    return available_asset_canister;
   }
 
   async createActorRef() {
@@ -474,7 +479,7 @@ class SupplyChain extends React.Component {
 
   async upload() {
 
-    //await this.prepareAssetCanister();
+    let available_asset_canister = await this.prepareAssetCanister();
 
     if (!this.state.file) {
       alert('No file selected');
@@ -526,7 +531,11 @@ class SupplyChain extends React.Component {
 
     console.log('uploaded');
 
-    const assetKey = [...currentDraft.draftFile, "/" + currentDraft.id + "/assets/" + batch_name]
+    //const assetKey = [...currentDraft.draftFile, "/" + currentDraft.id + "/assets/" + batch_name]
+    const assetKey = [
+      ...currentDraft.draftFile,
+      { url: "/" + currentDraft.id + "/assets/" + batch_name, canisterId: available_asset_canister }
+    ];
     this.setState({
       currentDraft: {
         ...this.state.currentDraft,
@@ -566,22 +575,23 @@ class SupplyChain extends React.Component {
     const fragment = document.createDocumentFragment();
 
     // Iterate over the image sources and create image tags
-    files.forEach((src) => {
-      const fileExtension = src.split('.').pop().toLowerCase();
+    files.forEach((file) => {
+      const { url, canisterId } = file;
+      const fileExtension = url.split('.').pop().toLowerCase();
 
       if (fileExtension === 'pdf') {
         // Handle PDF files
         const embed = document.createElement('embed');
         embed.width = 600;
         embed.height = 400;
-        embed.src = `http://localhost:4943${src}?canisterId=${this.state.assets_canisterid}`;
+        embed.src = `http://localhost:4943${url}?canisterId=${canisterId}`;
         fragment.appendChild(embed);
       } else {
         // Handle image files
         const img = document.createElement('img');
         img.width = 300;
         img.height = 200;
-        img.src = `http://localhost:4943${src}?canisterId=${this.state.assets_canisterid}`;
+        img.src = `http://localhost:4943${url}?canisterId=${canisterId}`;
         fragment.appendChild(img);
       }
     });
@@ -603,7 +613,10 @@ class SupplyChain extends React.Component {
       text
     }));
     currentDraft.previousNodesIDs = draft[4];
-    currentDraft.draftFile = draft[5];
+    currentDraft.draftFile = draft[5].map(([url, canisterId]) => ({
+      url,
+      canisterId
+    }));
     this.setState({ currentDraft: currentDraft });
 
     // remove images and file from the last current draft
