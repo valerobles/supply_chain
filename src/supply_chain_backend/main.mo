@@ -22,7 +22,7 @@ import Cycles "mo:base/ExperimentalCycles";
 actor Main {
 
   private stable var storageWasm : [Nat8] = [];
-  stable var canister_ids = List.nil<Text>();
+  stable var canister_ids = List.nil<Principal>();
 
   //Learning: Cant return non-shared classes (aka mutable classes). Save mutable data to this actor instead of node?
   var allNodes = List.nil<Types.Node>(); // make stable
@@ -396,7 +396,7 @@ actor Main {
   };
 
   
-  canister_ids := List.push<Text>("bkyz2-fmaaa-aaaaa-qaaaq-cai", canister_ids);
+  canister_ids := List.push<Principal>(Principal.fromText("bkyz2-fmaaa-aaaaa-qaaaq-cai"), canister_ids);
 
   let IC = actor "aaaaa-aa" : actor {
 
@@ -408,6 +408,7 @@ actor Main {
 
     canister_status : { canister_id : Principal } -> async {
       cycles : Nat;
+      memory_size: Nat;
     };
 
     install_code : ({
@@ -420,6 +421,7 @@ actor Main {
     stop_canister : { canister_id : Principal } -> async ();
 
     delete_canister : { canister_id : Principal } -> async ();
+
   };
 
   public func storageLoadWasm(blob : [Nat8]) : async ({
@@ -439,10 +441,10 @@ actor Main {
     };
   };
 
-  public shared (message) func create() : async () {
-
+  public func create() : async () {
+//TODO remove message.caller and see if it still works with chunking
     let settings_ : Types.CanisterSettings = {
-      controllers = ?[Principal.fromActor(Main), message.caller];
+      controllers = ?[Principal.fromActor(Main), Principal.fromText("br5f7-7uaaa-aaaaa-qaaca-cai")];
       compute_allocation = null;
       memory_allocation = null;
       freezing_threshold = null;
@@ -451,9 +453,9 @@ actor Main {
     Cycles.add(Cycles.balance() / 2);
     let cid = await IC.create_canister({ settings = settings_ });
     Debug.print("canister id " # Principal.toText(cid.canister_id));
-    canister_ids := List.push<Text>(Principal.toText(cid.canister_id), canister_ids);
+    canister_ids := List.push<Principal>(cid.canister_id, canister_ids);
     let status = await IC.canister_status(cid);
-    Debug.print("canister " #Principal.toText(cid.canister_id) # " has " # Nat.toText(status.cycles) # " cycles");
+    Debug.print("canister " #Principal.toText(cid.canister_id) # " has " # Nat.toText(status.cycles) # " cycles and " # Nat.toText(status.memory_size) # " bytes");
 
     await IC.install_code({
       mode = #install;
@@ -462,45 +464,50 @@ actor Main {
       arg = Blob.fromArray([]);
     });
 
+    Debug.print("canister " #Principal.toText(cid.canister_id) # " has " # Nat.toText(status.memory_size) # " bytes");
+
   };
 
-  var asset_canisters = List.nil<Types.Asset_Canister>();
+  // var asset_canisters = List.nil<Types.Asset_Canister>();
 
-  let AC : Types.Asset_Canister = actor ("b77ix-eeaaa-aaaaa-qaada-cai");
+  // let AC : Types.Asset_Canister = actor ("b77ix-eeaaa-aaaaa-qaada-cai");
 
-  asset_canisters := List.push<Types.Asset_Canister>(AC, asset_canisters);
+  // asset_canisters := List.push<Types.Asset_Canister>(AC, asset_canisters);
 
-  public query func getAvailableAssetsCanister() : async ?Text {
+  public func getUsedMemmory() : async Nat {
+    let current_asset_canister = List.get<Principal>(canister_ids,0);
+
+    switch (current_asset_canister) {
+      case (null) {
+         throw Error.reject(" no asset canister available");
+      };
+      case (?current_asset_canister) {
+        let mem = await IC.canister_status({ canister_id = current_asset_canister});
+        Debug.print(Nat.toText(mem.memory_size));
+        return mem.memory_size;
+      }
+    };
+
+  };
+
+  public query func getAvailableAssetsCanister() : async Text {
     // TODO
     // add logic to find available Canister for upload
     // if none available, create new canister
-    let size : Nat = List.size<Text>(canister_ids);
+    let size : Nat = List.size<Principal>(canister_ids);
     Debug.print(Nat.toText(size));
   
-    return List.get<Text>(canister_ids,0);
+    let current_asset_canister = List.get<Principal>(canister_ids,0);
+
+    switch (current_asset_canister) {
+      case (null) {
+         throw Error.reject(" no asset canister available");
+      };
+      case (?current_asset_canister) {
+        return Principal.toText(current_asset_canister);
+      }
+    };
   };
-
-  // public func create_chunk(chunk : Types.Chunk, asset_canister_id : Text) : async {
-  //   chunk_id : Nat;
-  // } {
-
-  //   return await AC.create_chunk(chunk);
-
-  // };
-
-  // public func commit_batch({
-  //   node_id : Nat;
-  //   batch_name : Text;
-  //   chunk_ids : [Nat];
-  //   content_type : Text;
-  // }) : async () {
-  //   await AC.commit_batch({
-  //     node_id;
-  //     batch_name;
-  //     chunk_ids;
-  //     content_type;
-  //   });
-
-  // };
+  
 
 };

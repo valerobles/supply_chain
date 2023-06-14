@@ -44,6 +44,7 @@ const frontendDirectory = "supply_chain_frontend";
 const frontend_entry = path.join("src", frontendDirectory, "src", "index.html");
 
 module.exports = {
+  
   target: "web",
   mode: isDevelopment ? "development" : "production",
   entry: {
@@ -69,6 +70,10 @@ module.exports = {
   output: {
     filename: "index.jsx",
     path: path.join(__dirname, "dist", frontendDirectory),
+  },
+  experiments: {
+    asyncWebAssembly: true,
+    syncWebAssembly: true
   },
 
   // Depending in the language or framework you are using for
@@ -123,4 +128,6 @@ module.exports = {
     watchFiles: [path.resolve(__dirname, "src", frontendDirectory)],
     liveReload: true,
   },
+
+ 
 };

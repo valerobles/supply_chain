@@ -1,7 +1,7 @@
 import { createActor, supply_chain_backend } from "../../declarations/supply_chain_backend";
-import { createActor as please , assets_db } from "../../declarations/assets_db";
+import { createActor as createAssetActor, assets_db } from "../../declarations/assets_db";
 import { AuthClient } from "@dfinity/auth-client"
-import { HttpAgent, Actor } from "@dfinity/agent";
+import { HttpAgent } from "@dfinity/agent";
 import * as React from 'react';
 import { render } from 'react-dom';
 import React from 'react';
@@ -270,13 +270,7 @@ class SupplyChain extends React.Component {
     document.getElementById("ii").value = this.state.actor.getCaller();
   }
 
-  async getCanisterID() {
 
-    let s = await this.state.actor.getAvailableAssetsCanister();
-    this.state.assets_canisterid = s[0]
-    return this.state.assets_canisterid;
-
-  }
 
   async addSupplier() {
     let userName = document.getElementById("newSupplierName");
@@ -445,24 +439,34 @@ class SupplyChain extends React.Component {
   }
 
   async prepareAssetCanister() {
-    let available_asset_canister = await this.getCanisterID();
-    await this.createActorRef();
+    let availableAssetCanister = await this.getAvailableAssetCanister();
 
-    return available_asset_canister;
+    if (availableAssetCanister != this.state.assets_canisterid) {
+        this.state.assets_canisterid = availableAssetCanister
+        await this.createActorRef();
+    }
+
+
+    return availableAssetCanister;
+  }
+
+  async getAvailableAssetCanister() {
+
+    let canisterID = await this.state.actor.getAvailableAssetsCanister();
+    console.log(canisterID)
+    return canisterID;
+
   }
 
   async createActorRef() {
     const agent = this.state.agent;
-    // this.state.asset_canister = createActor(this.state.assets_canisterid, {
-    //   agent,
-    // });
 
-    this.state.asset_canister = please(this.state.assets_canisterid, {
+    this.state.asset_canister = createAssetActor(this.state.assets_canisterid, {
       agent,
     });
 
-    let soth = await this.state.asset_canister.greet();
-  }
+    await this.state.asset_canister.greet();
+  };
 
 
 
@@ -479,12 +483,15 @@ class SupplyChain extends React.Component {
 
   async upload() {
 
-    let available_asset_canister = await this.prepareAssetCanister();
-
     if (!this.state.file) {
       alert('No file selected');
       return;
     }
+
+    let size = this.state.file.size
+    let availableAssetCanister = await this.prepareAssetCanister();
+
+    
 
     const { currentDraft } = this.state;
 
@@ -531,10 +538,9 @@ class SupplyChain extends React.Component {
 
     console.log('uploaded');
 
-    //const assetKey = [...currentDraft.draftFile, "/" + currentDraft.id + "/assets/" + batch_name]
     const assetKey = [
       ...currentDraft.draftFile,
-      { url: "/" + currentDraft.id + "/assets/" + batch_name, canisterId: available_asset_canister }
+      { url: "/" + currentDraft.id + "/assets/" + batch_name, canisterId: availableAssetCanister }
     ];
     this.setState({
       currentDraft: {

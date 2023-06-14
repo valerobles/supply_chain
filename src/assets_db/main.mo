@@ -104,6 +104,13 @@ actor Asset_Management {
 
     };
 
+  // remove chunks from chunks mapping. All the necessery informations is inside the assets mapping
+    for (chunk_id in chunk_ids.vals()) {
+      chunks.delete(chunk_id);
+    };
+
+
+
   };
 
   public query func http_request(
