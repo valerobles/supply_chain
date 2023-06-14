@@ -484,10 +484,14 @@ actor Main {
       case (?current_asset_canister) {
         let mem = await IC.canister_status({ canister_id = current_asset_canister});
         Debug.print(Nat.toText(mem.memory_size));
-        return mem.memory_size;
+        return 4_187_593_000 - mem.memory_size;
       }
     };
 
+  };
+
+  public func hasEnoughMemory() : async Bool {
+    return 20_000 < (await getUsedMemmory());
   };
 
   public query func getAvailableAssetsCanister() : async Text {

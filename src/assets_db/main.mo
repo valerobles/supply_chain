@@ -16,9 +16,6 @@ import Time "mo:base/Time";
 import Error "mo:base/Error";
 
 actor Asset_Management {
-
-  //let ci : Text = Principal.toText(Principal.fromActor(Asset_Management));
-
   
 
   public query func greet() : async () {
