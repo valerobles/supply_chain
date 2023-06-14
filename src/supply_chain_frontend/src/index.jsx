@@ -1,7 +1,7 @@
 import { createActor, supply_chain_backend } from "../../declarations/supply_chain_backend";
-//import { createActor, assets_db } from "../../declarations/assets_db";
+import { createActor as please , assets_db } from "../../declarations/assets_db";
 import { AuthClient } from "@dfinity/auth-client"
-import { HttpAgent } from "@dfinity/agent";
+import { HttpAgent, Actor } from "@dfinity/agent";
 import * as React from 'react';
 import { render } from 'react-dom';
 import React from 'react';
@@ -17,7 +17,7 @@ class SupplyChain extends React.Component {
     super(props);
     this.state = {
       actor: supply_chain_backend,
-      asset_canister: null,
+      asset_canister: assets_db,
       file: null,
       wasm: null,
       agent: null,
@@ -49,6 +49,10 @@ class SupplyChain extends React.Component {
     this.state.wasm = event.target.files[0];
     console.log(this.state.wasm)
 
+  }
+
+  async createCanister() {
+    await this.state.actor.create();
   }
 
   async installWasm() {
@@ -444,11 +448,15 @@ class SupplyChain extends React.Component {
 
   async createActorRef() {
     const agent = this.state.agent;
-    this.state.asset_canister = createActor(this.state.assets_canisterid, {
+    // this.state.asset_canister = createActor(this.state.assets_canisterid, {
+    //   agent,
+    // });
+
+    this.state.asset_canister = please(this.state.assets_canisterid, {
       agent,
     });
 
-    await this.state.asset_canister.greet();
+    let soth = await this.state.asset_canister.greet();
   }
 
 
@@ -698,9 +706,10 @@ class SupplyChain extends React.Component {
     return (
       <div>
         <h1>Supply Chain</h1>
-        <button onClick={() => this.installWasm()}>Install Wasm</button>
         <button onClick={() => this.prepareAssetCanister()}>Call Asset Canister</button>
+        <button onClick={() => this.installWasm()}>Install Wasm</button>
         <input id="image" alt="image" onChange={(e) => this.wasmHandler(e)} type="file" />
+        <button onClick={() => this.createCanister()}>Create Canister</button>
         <button type="submit" id="login" onClick={() => this.login()}>Login</button>
         <h2 id="greeting"></h2>
         <div id="addSupplier" style={{ display: "none" }} >

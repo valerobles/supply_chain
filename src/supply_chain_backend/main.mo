@@ -432,10 +432,10 @@ actor Main {
     };
   };
 
-  public func create() : async () {
+  public shared (message) func create() : async () {
 
     let settings_ : Types.CanisterSettings = {
-      controllers = ?[Principal.fromActor(Main)];
+      controllers = ?[Principal.fromActor(Main), message.caller];
       compute_allocation = null;
       memory_allocation = null;
       freezing_threshold = null;
@@ -473,27 +473,27 @@ actor Main {
     return List.get<Text>(canister_ids,0);
   };
 
-  public func create_chunk(chunk : Types.Chunk, asset_canister_id : Text) : async {
-    chunk_id : Nat;
-  } {
+  // public func create_chunk(chunk : Types.Chunk, asset_canister_id : Text) : async {
+  //   chunk_id : Nat;
+  // } {
 
-    return await AC.create_chunk(chunk);
+  //   return await AC.create_chunk(chunk);
 
-  };
+  // };
 
-  public func commit_batch({
-    node_id : Nat;
-    batch_name : Text;
-    chunk_ids : [Nat];
-    content_type : Text;
-  }) : async () {
-    await AC.commit_batch({
-      node_id;
-      batch_name;
-      chunk_ids;
-      content_type;
-    });
+  // public func commit_batch({
+  //   node_id : Nat;
+  //   batch_name : Text;
+  //   chunk_ids : [Nat];
+  //   content_type : Text;
+  // }) : async () {
+  //   await AC.commit_batch({
+  //     node_id;
+  //     batch_name;
+  //     chunk_ids;
+  //     content_type;
+  //   });
 
-  };
+  // };
 
 };

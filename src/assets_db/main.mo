@@ -67,6 +67,7 @@ actor Asset_Management {
   }) : async () {
 
     // TODO call the assets_db canister for commit_batch
+    Debug.print("Commiting batch from: " # Principal.toText(Principal.fromActor(Asset_Management)));
 
     let content_chunks = Buffer.Buffer<[Nat8]>(4); //mutable array
 
