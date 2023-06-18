@@ -21,8 +21,13 @@ import Cycles "mo:base/ExperimentalCycles";
 
 actor Main {
 
+  // variable saving wasm module that is needed for canister creation
   private stable var storageWasm : [Nat8] = [];
+
+  // list of all asset canister ids
   stable var canister_ids = List.nil<Principal>();
+  canister_ids := List.push<Principal>(Principal.fromText("bkyz2-fmaaa-aaaaa-qaaaq-cai"), canister_ids);
+
 
   //Learning: Cant return non-shared classes (aka mutable classes). Save mutable data to this actor instead of node?
   var allNodes = List.nil<Types.Node>(); // make stable
@@ -396,11 +401,9 @@ actor Main {
     return Principal.toText(message.caller);
   };
 
-  canister_ids := List.push<Principal>(Principal.fromText("bkyz2-fmaaa-aaaaa-qaaaq-cai"), canister_ids);
 
+  // Management Canister Reference Methods
   let IC = actor "aaaaa-aa" : actor {
-
-    // TODO add method that checks memory availability
 
     create_canister : {
       settings : (s : Types.CanisterSettings);
@@ -441,8 +444,9 @@ actor Main {
     };
   };
 
+ // Create Asset Canister
   public func create() : async () {
-    //TODO remove message.caller and see if it still works with chunking
+    
     let settings_ : Types.CanisterSettings = {
       controllers = ?[Principal.fromActor(Main), Principal.fromText("br5f7-7uaaa-aaaaa-qaaca-cai")];
       compute_allocation = null;
@@ -464,15 +468,7 @@ actor Main {
       arg = Blob.fromArray([]);
     });
 
-    Debug.print("canister " #Principal.toText(cid.canister_id) # " has " # Nat.toText(status.memory_size) # " bytes");
-
   };
-
-  // var asset_canisters = List.nil<Types.Asset_Canister>();
-
-  // let AC : Types.Asset_Canister = actor ("b77ix-eeaaa-aaaaa-qaada-cai");
-
-  // asset_canisters := List.push<Types.Asset_Canister>(AC, asset_canisters);
 
   public func getUsedMemmory() : async Nat {
     let current_asset_canister = List.get<Principal>(canister_ids, 0);

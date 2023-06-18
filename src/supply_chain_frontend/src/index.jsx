@@ -463,7 +463,7 @@ class SupplyChain extends React.Component {
   }
 
   async createActorRef() {
-    const agent = this.state.agent;
+    const agent = this.state.agent; // agent will be created when login through ii is successful
 
     this.state.asset_canister = createAssetActor(this.state.assets_canisterid, {
       agent,
