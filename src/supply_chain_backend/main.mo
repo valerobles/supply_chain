@@ -120,13 +120,14 @@ actor Main {
   //TODO next owner gets notified to create node containing this one and maybe others
   //Creates a new Node, increments nodeId BEFORE creating it.
   private func createNode(
-    id : Nat, 
-    previousNodes : List.List<Types.Node>, 
-    title : Text, 
-    currentOwner : Types.Supplier, 
-    nextOwner : Types.Supplier, 
-    labelToText : [(Text, Text)], 
-    assetKeys : [(Text,Text)]) : (Types.Node) {
+    id : Nat,
+    previousNodes : List.List<Types.Node>,
+    title : Text,
+    currentOwner : Types.Supplier,
+    nextOwner : Types.Supplier,
+    labelToText : [(Text, Text)],
+    assetKeys : [(Text, Text)],
+  ) : (Types.Node) {
 
     {
       nodeId = id;
@@ -185,11 +186,11 @@ actor Main {
 
   //Returns all information of a node excluding id/childnodes
   //Values are all empty if node does not exist
-  public query func getNodeById(id : Nat) : async (Text, Types.Supplier, Types.Supplier, [(Text, Text)], [(Text,Text)]) {
+  public query func getNodeById(id : Nat) : async (Text, Types.Supplier, Types.Supplier, [(Text, Text)], [(Text, Text)]) {
     let node = Utils.getNodeById(id, allNodes);
     switch (node) {
       case null {
-        ("", { userName = ""; userId = "" }, { userName = ""; userId = "" }, [("", "")], [("","")]);
+        ("", { userName = ""; userId = "" }, { userName = ""; userId = "" }, [("", "")], [("", "")]);
       };
       case (?node) {
         return (node.title, node.owner, node.nextOwner, node.texts, node.assetKeys);
@@ -229,7 +230,7 @@ actor Main {
     };
   };
 
-  public shared (message) func saveToDraft(nodeId : Nat, nextOwner : Types.Supplier, labelToText : [(Text, Text)], previousNodes : [Nat], assetKeys : [(Text,Text)]) : async (Text) {
+  public shared (message) func saveToDraft(nodeId : Nat, nextOwner : Types.Supplier, labelToText : [(Text, Text)], previousNodes : [Nat], assetKeys : [(Text, Text)]) : async (Text) {
     let ownerId = Principal.toText(message.caller);
     // assert not Principal.isAnonymous(message.caller);
     assert not (suppliers.get(ownerId) == null);
@@ -283,10 +284,10 @@ actor Main {
     };
     return Buffer.toArray(listOfDraft);
   };
-  public query (message) func getDraftById(id : Nat) : async (Nat, Text, Types.Supplier, [(Text, Text)], [Nat], [(Text,Text)]) {
+  public query (message) func getDraftById(id : Nat) : async (Nat, Text, Types.Supplier, [(Text, Text)], [Nat], [(Text, Text)]) {
     let ownerId = Principal.toText(message.caller);
     var draftList = supplierToDraftNodeID.get(ownerId);
-    let emptyDraft = (0, "", { userName = ""; userId = "" }, [("", "")], [0], [("","")]);
+    let emptyDraft = (0, "", { userName = ""; userId = "" }, [("", "")], [0], [("", "")]);
     switch (draftList) {
       case null {
         return emptyDraft;
@@ -395,7 +396,6 @@ actor Main {
     return Principal.toText(message.caller);
   };
 
-  
   canister_ids := List.push<Principal>(Principal.fromText("bkyz2-fmaaa-aaaaa-qaaaq-cai"), canister_ids);
 
   let IC = actor "aaaaa-aa" : actor {
@@ -408,7 +408,7 @@ actor Main {
 
     canister_status : { canister_id : Principal } -> async {
       cycles : Nat;
-      memory_size: Nat;
+      memory_size : Nat;
     };
 
     install_code : ({
@@ -433,7 +433,7 @@ actor Main {
     let chunks : Buffer.Buffer<Nat8> = Buffer.fromArray<Nat8>(blob);
     buffer.append(chunks);
     storageWasm := Buffer.toArray(buffer);
-    Debug.print(Nat.toText(storageWasm.size()));
+  
 
     return {
       total = storageWasm.size();
@@ -442,7 +442,7 @@ actor Main {
   };
 
   public func create() : async () {
-//TODO remove message.caller and see if it still works with chunking
+    //TODO remove message.caller and see if it still works with chunking
     let settings_ : Types.CanisterSettings = {
       controllers = ?[Principal.fromActor(Main), Principal.fromText("br5f7-7uaaa-aaaaa-qaaca-cai")];
       compute_allocation = null;
@@ -475,43 +475,46 @@ actor Main {
   // asset_canisters := List.push<Types.Asset_Canister>(AC, asset_canisters);
 
   public func getUsedMemmory() : async Nat {
-    let current_asset_canister = List.get<Principal>(canister_ids,0);
+    let current_asset_canister = List.get<Principal>(canister_ids, 0);
 
     switch (current_asset_canister) {
       case (null) {
-         throw Error.reject(" no asset canister available");
+        throw Error.reject(" no asset canister available");
       };
       case (?current_asset_canister) {
-        let mem = await IC.canister_status({ canister_id = current_asset_canister});
-        Debug.print(Nat.toText(mem.memory_size));
-        return 4_187_593_000 - mem.memory_size;
-      }
+        let mem = await IC.canister_status({
+          canister_id = current_asset_canister;
+        });
+        return mem.memory_size; 
+      };
     };
 
   };
 
-  public func hasEnoughMemory() : async Bool {
-    return 20_000 < (await getUsedMemmory());
+  public func hasEnoughMemory(fileSize : Nat) : async Bool {
+  
+    return ((fileSize * 2) + (await getUsedMemmory())) < 5_000_000; // 4_186_000_000 (ca. 3.9 GB)
   };
 
-  public query func getAvailableAssetsCanister() : async Text {
-    // TODO
-    // add logic to find available Canister for upload
-    // if none available, create new canister
-    let size : Nat = List.size<Principal>(canister_ids);
-    Debug.print(Nat.toText(size));
-  
-    let current_asset_canister = List.get<Principal>(canister_ids,0);
+  public func getAvailableAssetsCanister(fileSize : Nat) : async Text {
 
-    switch (current_asset_canister) {
-      case (null) {
-         throw Error.reject(" no asset canister available");
+    if ((await hasEnoughMemory(fileSize))) {
+      let current_asset_canister = List.get<Principal>(canister_ids, 0);
+      switch (current_asset_canister) {
+        case (null) {
+          throw Error.reject(" no asset canister available");
+        };
+        case (?current_asset_canister) {
+          return Principal.toText(current_asset_canister);
+        };
       };
-      case (?current_asset_canister) {
-        return Principal.toText(current_asset_canister);
-      }
+
+    } else {
+      await create();
+      await getAvailableAssetsCanister(fileSize);
+ 
     };
+
   };
-  
 
 };

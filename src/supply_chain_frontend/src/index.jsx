@@ -401,6 +401,10 @@ class SupplyChain extends React.Component {
     });
 
 
+
+    document.getElementById("createCanister").style.display = "block";
+    
+
     const greeting = await this.state.actor.greet();
     document.getElementById("greeting").innerText = greeting;
 
@@ -438,8 +442,8 @@ class SupplyChain extends React.Component {
     }
   }
 
-  async prepareAssetCanister() {
-    let availableAssetCanister = await this.getAvailableAssetCanister();
+  async prepareAssetCanister(fileSize) {
+    let availableAssetCanister = await this.getAvailableAssetCanister(fileSize);
 
     if (availableAssetCanister != this.state.assets_canisterid) {
         this.state.assets_canisterid = availableAssetCanister
@@ -450,9 +454,9 @@ class SupplyChain extends React.Component {
     return availableAssetCanister;
   }
 
-  async getAvailableAssetCanister() {
+  async getAvailableAssetCanister(fileSize) {
 
-    let canisterID = await this.state.actor.getAvailableAssetsCanister();
+    let canisterID = await this.state.actor.getAvailableAssetsCanister(fileSize);
     console.log(canisterID)
     return canisterID;
 
@@ -489,7 +493,7 @@ class SupplyChain extends React.Component {
     }
 
     let size = this.state.file.size
-    let availableAssetCanister = await this.prepareAssetCanister();
+    let availableAssetCanister = await this.prepareAssetCanister(size);
 
     
 
@@ -725,10 +729,13 @@ class SupplyChain extends React.Component {
     return (
       <div>
         <h1>Supply Chain</h1>
-        <button onClick={() => this.prepareAssetCanister()}>Call Asset Canister</button>
-        <button onClick={() => this.installWasm()}>Install Wasm</button>
-        <input id="image" alt="image" onChange={(e) => this.wasmHandler(e)} type="file" />
-        <button onClick={() => this.createCanister()}>Create Canister</button>
+        {/* <button onClick={() => this.prepareAssetCanister()}>Call Asset Canister</button> */}
+        <div id="createCanister" style={{ display: "none" }} >
+          <button onClick={() => this.installWasm()}>Install Wasm</button>
+          <input id="image" alt="image" onChange={(e) => this.wasmHandler(e)} type="file" />
+          {/* <button onClick={() => this.createCanister()}>Create Canister</button> */}
+        </div>
+ 
         <button type="submit" id="login" onClick={() => this.login()}>Login</button>
         <h2 id="greeting"></h2>
         <div id="addSupplier" style={{ display: "none" }} >
