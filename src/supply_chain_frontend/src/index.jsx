@@ -72,17 +72,13 @@ class SupplyChain extends React.Component {
       ));
     }
 
-    const chunksSize = await Promise.all(promises);
-
-    console.log(chunksSize);
-
-
+     await Promise.all(promises);
 
     console.log("Wasm module upload done");
   };
 
   async uploadWasm(chunk) {
-    return await this.state.actor.storageLoadWasm(
+    return await this.state.actor.save_wasm_module(
       [...new Uint8Array(await chunk.arrayBuffer())]
     );
   }
@@ -157,11 +153,11 @@ class SupplyChain extends React.Component {
     let idInput = document.getElementById("nodeId");
     let idValue = BigInt(idInput.value);
 
-    let nodeExists = await this.state.actor.checkNodeExists(idValue);
+    let nodeExists = await this.state.actor.check_node_exists(idValue);
 
 
     if (nodeExists) {
-      let node = await this.state.actor.getNodeById(idValue); // maybe cast in BigInt
+      let node = await this.state.actor.get_node_by_id(idValue); // maybe cast in BigInt
       console.log(node);
       const { currentNode } = this.state;
       currentNode.id = idInput;
@@ -221,7 +217,7 @@ class SupplyChain extends React.Component {
 
 
   async finalizeNode() {
-    let response = await this.state.actor.createLeafNode(this.state.currentDraft.id);
+    let response = await this.state.actor.create_leaf_node(this.state.currentDraft.id);
 
     alert(response[0]);
     if (response[1]) {
@@ -256,21 +252,12 @@ class SupplyChain extends React.Component {
       currentDraft.draftFile.map(({ url, canisterId }) => [url, canisterId]),
     ];
 
-    let response = await this.state.actor.saveToDraft(...currentD);
+    let response = await this.state.actor.safe_draft(...currentD);
     this.state.file = null;
     alert(response);
     this.loadImage(currentDraft.draftFile, true)
 
   }
-
-
-
-
-  async getCaller() {
-    document.getElementById("ii").value = this.state.actor.getCaller();
-  }
-
-
 
   async addSupplier() {
     let userName = document.getElementById("newSupplierName");
@@ -280,7 +267,7 @@ class SupplyChain extends React.Component {
       userId: userID.value,
 
     }
-    let response = await this.state.actor.addSupplier(supplier);
+    let response = await this.state.actor.add_supplier(supplier);
 
     userName.value = "";
     userID.value = "";
@@ -294,7 +281,7 @@ class SupplyChain extends React.Component {
   }
 
   async createNode() {
-    const caller = await this.state.actor.getCaller();
+    const caller = await this.state.actor.get_caller();
 
     // let title = document.getElementById("newNodeTitle");
     // let nextOwnerID = document.getElementById("newNodeNextOwner");
@@ -310,13 +297,13 @@ class SupplyChain extends React.Component {
     if (title.length > 0) {
       //Check if there are any child nodes. If not, the node is a "rootnode", which is a node without children
       if (children.length == 0) {
-        response += await this.state.actor.createLeafNode([0], title, caller, nextOwner);
+        response += await this.state.actor.create_leaf_node([0], title, caller, nextOwner);
       } else {
         //Split child node IDs by ","
         let numbers = children.split(',').map(function (item) {
           return parseInt(item, 10);
         });
-        response += await this.state.actor.createLeafNode(numbers, title, caller, nextOwner);
+        response += await this.state.actor.create_leaf_node(numbers, title, caller, nextOwner);
       }
 
       if (caller === "2vxsx-fae") {
@@ -344,7 +331,7 @@ class SupplyChain extends React.Component {
       if (tValue.length > 0) {
         //Check if there are any child nodes. If not, the node is a "rootnode", which is a node without children
 
-        let response = await this.state.actor.createDraftNode(tValue);
+        let response = await this.state.actor.create_draft_node(tValue);
         alert(response)
         this.getDraftBySupplier()
 
@@ -355,11 +342,12 @@ class SupplyChain extends React.Component {
   }
 
   async getDraftBySupplier() {
-    let isSupplier = this.state.actor.isSupplierLoggedIn();
+    let isSupplier = await this.state.actor.is_supplier_logged_in();
+    console.log(isSupplier);
     let myElement = document.getElementById("draftsList");
     if (isSupplier) {
 
-      let result = await this.state.actor.getDraftsBySupplier();
+      let result = await this.state.actor.get_drafts_by_supplier();
       myElement.style.display = "block"; // Show the element
 
       let tempDrafts = [];
@@ -420,11 +408,11 @@ class SupplyChain extends React.Component {
 
 
   async getNodes() {
-    let all = await this.state.actor.showAllNodes();
+    let all = await this.state.actor.show_all_nodes();
     document.getElementById("allNodes").innerHTML = all;
   }
   async getSuppliers() {
-    let all = await this.state.actor.getSuppliers();
+    let all = await this.state.actor.get_suppliers();
     document.getElementById("suppliers").innerHTML = all;
 
   }
@@ -432,7 +420,7 @@ class SupplyChain extends React.Component {
     let tree = document.getElementById("parentId");
     const tValue = parseInt(tree.value, 10);
     if (tValue >= 0) {
-      let nodes = await this.state.actor.showAllChildNodes(tValue);
+      let nodes = await this.state.actor.show_all_child_nodes(tValue);
       nodes = nodes.replace(/\n/g, '<br>');
       console.log("Nodes:" + nodes)
       if (nodes === "") { nodes = "No child nodes found" }
@@ -456,7 +444,7 @@ class SupplyChain extends React.Component {
 
   async getAvailableAssetCanister(fileSize) {
 
-    let canisterID = await this.state.actor.getAvailableAssetsCanister(fileSize);
+    let canisterID = await this.state.actor.get_available_asset_canister(fileSize);
     console.log(canisterID)
     return canisterID;
 
@@ -611,7 +599,7 @@ class SupplyChain extends React.Component {
   }
 
   async setCurrentDraft(id) {
-    let draft = await this.state.actor.getDraftById(id);
+    let draft = await this.state.actor.get_draft_by_id(id);
     console.log(draft);
     const { currentDraft } = this.state;
     currentDraft.id = Number(draft[0]);
@@ -700,9 +688,8 @@ class SupplyChain extends React.Component {
   }
 
   async showAddSupplier() {
-    let hasAccess = await this.state.actor.canAddNewSupplier();
+    let hasAccess = await this.state.actor.can_add_new_supplier();
     let myElement = document.getElementById("addSupplier");
-    console.log("Add supplier " + hasAccess);
     if (hasAccess) {
       myElement.style.display = "block"; // Show the element
     } else {
@@ -712,7 +699,7 @@ class SupplyChain extends React.Component {
   }
 
   async showCreateDraft() {
-    let supplierLoggedIn = await this.state.actor.isSupplierLoggedIn();
+    let supplierLoggedIn = await this.state.actor.is_supplier_logged_in();
     let myElement = document.getElementById("createDraftBlock");
     if (supplierLoggedIn) {
       myElement.style.display = "block"; // Show the element
@@ -817,7 +804,7 @@ class SupplyChain extends React.Component {
               </tr>
             </tbody>
           </table>
-          <button onClick={() => this.createDraftNode()}>Create Draft Node</button>
+          <button onClick={() => this.create_draft_node()}>Create Draft Node</button>
           <div id="createResult"></div>
           <br></br>
         </div>
