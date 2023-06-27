@@ -492,8 +492,7 @@ class SupplyChain extends React.Component {
       return;
     }
 
-    let size = this.state.file.size
-    let availableAssetCanister = await this.prepareAssetCanister(size);
+    let availableAssetCanister = await this.prepareAssetCanister(this.state.file.size);
 
     
 

@@ -21,12 +21,15 @@ import Cycles "mo:base/ExperimentalCycles";
 
 actor Main {
 
+  // Management canister actor reference. Used for canister creation
+  let IC: Types.Management = actor ("aaaaa-aa");
+
   // variable saving wasm module that is needed for canister creation
   private stable var storageWasm : [Nat8] = [];
 
   // list of all asset canister ids
-  stable var canister_ids = List.nil<Principal>();
-  canister_ids := List.push<Principal>(Principal.fromText("bkyz2-fmaaa-aaaaa-qaaaq-cai"), canister_ids);
+  stable var asset_canister_ids = List.nil<Principal>();
+  asset_canister_ids := List.push<Principal>(Principal.fromText("bkyz2-fmaaa-aaaaa-qaaaq-cai"), asset_canister_ids);
 
 
   //Learning: Cant return non-shared classes (aka mutable classes). Save mutable data to this actor instead of node?
@@ -402,31 +405,7 @@ actor Main {
   };
 
 
-  // Management Canister Reference Methods
-  let IC = actor "aaaaa-aa" : actor {
-
-    create_canister : {
-      settings : (s : Types.CanisterSettings);
-    } -> async { canister_id : Principal };
-
-    canister_status : { canister_id : Principal } -> async {
-      cycles : Nat;
-      memory_size : Nat;
-    };
-
-    install_code : ({
-      mode : { #install; #reinstall; #upgrade };
-      canister_id : Types.canister_id;
-      wasm_module : Blob;
-      arg : Blob;
-    }) -> async ();
-
-    stop_canister : { canister_id : Principal } -> async ();
-
-    delete_canister : { canister_id : Principal } -> async ();
-
-  };
-
+ // Saves sent wasm module to 'storageWasm' variable that is sent via chunking
   public func storageLoadWasm(blob : [Nat8]) : async ({
     total : Nat;
     chunks : Nat;
@@ -444,34 +423,40 @@ actor Main {
     };
   };
 
- // Create Asset Canister
-  public func create() : async () {
-    
-    let settings_ : Types.CanisterSettings = {
-      controllers = ?[Principal.fromActor(Main), Principal.fromText("br5f7-7uaaa-aaaaa-qaaca-cai")];
-      compute_allocation = null;
-      memory_allocation = null;
-      freezing_threshold = null;
+  // This method is called from frontend. Returns available asset canister for upload
+  // If the current asset canister doesnt have enough memory, a new one is created
+  public func getAvailableAssetsCanister(fileSize : Nat) : async Text {
+
+    if ((await hasEnoughMemory(fileSize))) {
+      let current_asset_canister = List.get<Principal>(asset_canister_ids, 0);
+      switch (current_asset_canister) {
+        case (null) {
+          throw Error.reject(" no asset canister available");
+        };
+        case (?current_asset_canister) {
+          return Principal.toText(current_asset_canister);
+        };
+      };
+
+    } else {
+      return await create(); // return newly created canister id
+
     };
-
-    Cycles.add(Cycles.balance() / 2);
-    let cid = await IC.create_canister({ settings = settings_ });
-    Debug.print("canister id " # Principal.toText(cid.canister_id));
-    canister_ids := List.push<Principal>(cid.canister_id, canister_ids);
-    let status = await IC.canister_status(cid);
-    Debug.print("canister " #Principal.toText(cid.canister_id) # " has " # Nat.toText(status.cycles) # " cycles and " # Nat.toText(status.memory_size) # " bytes");
-
-    await IC.install_code({
-      mode = #install;
-      canister_id = cid.canister_id;
-      wasm_module = Blob.fromArray(storageWasm);
-      arg = Blob.fromArray([]);
-    });
 
   };
 
+  // returns boolean if given file has enough space in the current asset canister
+  private func hasEnoughMemory(fileSize : Nat) : async Bool {
+  
+    return ((fileSize * 2) + (await getUsedMemmory())) < 4_186_000_000; // (ca. 3.9 GB)
+  };
+
+
+  // Makes a call to Management Canister and returns the current memory used
+  // for the current asset canister
   public func getUsedMemmory() : async Nat {
-    let current_asset_canister = List.get<Principal>(canister_ids, 0);
+
+    let current_asset_canister = List.get<Principal>(asset_canister_ids, 0); // get newest asset canister id
 
     switch (current_asset_canister) {
       case (null) {
@@ -487,30 +472,38 @@ actor Main {
 
   };
 
-  public func hasEnoughMemory(fileSize : Nat) : async Bool {
-  
-    return ((fileSize * 2) + (await getUsedMemmory())) < 5_000_000; // 4_186_000_000 (ca. 3.9 GB)
-  };
-
-  public func getAvailableAssetsCanister(fileSize : Nat) : async Text {
-
-    if ((await hasEnoughMemory(fileSize))) {
-      let current_asset_canister = List.get<Principal>(canister_ids, 0);
-      switch (current_asset_canister) {
-        case (null) {
-          throw Error.reject(" no asset canister available");
-        };
-        case (?current_asset_canister) {
-          return Principal.toText(current_asset_canister);
-        };
-      };
-
-    } else {
-      await create();
-      await getAvailableAssetsCanister(fileSize);
- 
+ // Creates a new asset canister by sending a request to the Management canister.
+ // Later the wasm code is installed in the newly created canister
+  public func create() : async (Text) {
+    
+    let settings_ : Types.CanisterSettings = {
+      controllers = ?[Principal.fromActor(Main)];
+      compute_allocation = null;
+      memory_allocation = null;
+      freezing_threshold = null;
     };
 
+    Cycles.add(Cycles.balance() / 2); // TODO set fixed amount of cycles
+    let cid = await IC.create_canister({ settings = settings_ });
+    asset_canister_ids := List.push<Principal>(cid.canister_id, asset_canister_ids);
+    let status = await IC.canister_status(cid);
+    Debug.print("canister " #Principal.toText(cid.canister_id) # " has " # Nat.toText(status.cycles) # " cycles and " # Nat.toText(status.memory_size) # " bytes");
+
+    await IC.install_code({
+      mode = #install;
+      canister_id = cid.canister_id;
+      wasm_module = Blob.fromArray(storageWasm);
+      arg = Blob.fromArray([]);
+    });
+
+    return Principal.toText(cid.canister_id);
+
   };
+
+ 
+
+
+
+
 
 };

@@ -48,7 +48,7 @@ actor Asset_Management {
 
   // puts the given chunk in the chunks hashmap together with the created chunkID. It then returns the chunkID as a record for frontend
   public func create_chunk(chunk : Types.Chunk) : async { chunk_id : Nat } {
-    // TODO call the assets_db canister for create_chunk
+ 
     nextChunkID := nextChunkID + 1;
     chunks.put(nextChunkID, chunk);
 

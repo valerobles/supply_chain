@@ -36,20 +36,30 @@ module {
 
     public type canister_id = Principal;
 
-    public type Asset_Canister = actor {
+    // Management Canister Reference Methods
+    public type Management = actor {
 
-        get_my_canister_id : () -> async (Text);
+    create_canister : {
+      settings : (s : CanisterSettings);
+    } -> async { canister_id : canister_id };
 
-        create_chunk : (
-            chunk : Chunk
-        ) -> async { chunk_id : Nat };
-
-        commit_batch : ({
-            node_id : Nat;
-            batch_name : Text;
-            chunk_ids : [Nat];
-            content_type : Text;
-        }) -> async ();
-
+    canister_status : { canister_id : canister_id } -> async {
+      cycles : Nat;
+      memory_size : Nat;
     };
+
+    install_code : ({
+      mode : { #install; #reinstall; #upgrade };
+      canister_id : canister_id;
+      wasm_module : Blob;
+      arg : Blob;
+    }) -> async ();
+
+    stop_canister : { canister_id : canister_id } -> async ();
+
+    delete_canister : { canister_id : canister_id } -> async ();
+
+    deposit_cycles :  {canister_id : canister_id} -> ();
+
+  };
 };
