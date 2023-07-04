@@ -315,7 +315,7 @@ class SupplyChain extends React.Component {
   }
 
   async createDraftNode() {
-    const caller = await this.state.actor.getCaller();
+    const caller = await this.state.actor.get_caller();
     let response = "";
     if (caller === "2vxsx-fae") {
       response = "Node was not created. Login to a supplier account to create nodes."
