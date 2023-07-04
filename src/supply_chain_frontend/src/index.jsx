@@ -804,7 +804,7 @@ class SupplyChain extends React.Component {
               </tr>
             </tbody>
           </table>
-          <button onClick={() => this.create_draft_node()}>Create Draft Node</button>
+          <button onClick={() => this.createDraftNode()}>Create Draft Node</button>
           <div id="createResult"></div>
           <br></br>
         </div>

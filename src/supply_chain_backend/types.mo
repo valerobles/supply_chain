@@ -1,6 +1,7 @@
 import L "mo:base/List";
 
 module {
+  //A supplier is an entity that has to be registered in the App. One must be
     public type Supplier = {
         userName : Text;
         userId : Text; // TODO: change to type Principal?
@@ -13,7 +14,9 @@ module {
         owner : Supplier;
         nextOwner : Supplier; //Holds information to this node
         texts : [(Text, Text)];
+        //Holds all direct children of this node
         previousNodes : L.List<Node>;
+        //Holds mapping of references to attached files
         assetKeys : [(Text, Text)];
     };
 

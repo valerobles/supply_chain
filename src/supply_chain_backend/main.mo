@@ -44,6 +44,7 @@ actor Main {
   // Contains all the drafts of each Supplier. Mapping from Supplier Id to a List of all Drafts
   var supplierToDraftNodeID = HashMap.HashMap<Text, List.List<DraftNode.DraftNode>>(0, Text.equal, natHash);
 
+  //Returns greeting to logged in user
   public query (message) func greet() : async Text {
     let id = Principal.toText(message.caller);
     let sup = suppliers.get(id);
@@ -107,7 +108,7 @@ actor Main {
               ("Finalized node with ID: " #Nat.toText(draft.id), true);
             } else {
               // Map given Ids (previousNodes) to actual nodes, if they exist, they are added to childNodes
-              //TODO maybe abort creation if one or more are not found?
+              
               //Counter to keep track of amount of added nodes
               var c2 = 0;
               var childNodes = List.filter<Types.Node>(
@@ -150,7 +151,7 @@ actor Main {
 
   };
 
-  //TODO next owner gets notified to create node containing this one and maybe others
+ 
   //Creates a new Node, increments nodeId BEFORE creating it.
   private func create_node(
     id : Nat,
@@ -174,8 +175,8 @@ actor Main {
   };
 
   // Creates a DraftNode object. It takes nodeId and the owner.
-  // with the created DraftNode object, it is added to the supplierToDraftNodeID Hashmap as a List
-  // that manages the supplier to all of their drafts
+  // with the created DraftNode object, it is added to the supplierToDraftNodeID Hashmap
+  // that maps the suppliers to their drafts
   public shared (message) func create_draft_node(title : Text) : async Text {
     nodeId += 1;
 
@@ -209,10 +210,12 @@ actor Main {
 
   };
 
+//Returns nodes as Text
   public query func show_all_nodes() : async Text {
     Utils.nodeListToText(allNodes);
   };
 
+//Takes all params for a draft and creates it
   public shared (message) func save_draft(nodeId : Nat, nextOwner : Types.Supplier, labelToText : [(Text, Text)], previousNodes : [Nat], assetKeys : [(Text, Text)]) : async (Text) {
     let caller = Principal.toText(message.caller);
 
@@ -267,12 +270,11 @@ actor Main {
   };
 
   // Adds a new Supplier with to suppliers map with key = internet identity value = username
-  // Only suppliers can add new suppliers. Exceptions for the first supplier added and the backend canister ID.
-  // TODO Only admins can add suppliers
+  // Only suppliers can add new suppliers. Exception for the first supplier which can be added by anyone to prevent bootstrap problem. 
   public shared (message) func add_supplier(supplier : Types.Supplier) : async Text {
     let caller = Principal.toText(message.caller);
 
-    // Exceptions for the first entry and if the caller is the backend canister.
+    // Exceptions for the first entry 
     // Suppliers can only be added  by authorized users. Existing IDs may not be overwritten
 
     if ((suppliers.size() == 0 or suppliers.get(caller) != null) and suppliers.get(supplier.userId) == null) {
@@ -291,7 +293,7 @@ actor Main {
     return {size = assetCanisterWasm.size()};
   };
 
-  // This method is called from frontend. Returns available asset canister for upload
+  // Returns available asset canister for upload
   // If the current asset canister doesnt have enough memory, a new one is created
   public func get_available_asset_canister(fileSize : Nat) : async Text {
 
@@ -314,7 +316,6 @@ actor Main {
   };
 
   // returns boolean if given file has enough space in the current asset canister
-  // TODO check if filesize is saved doubled
   private func has_enough_memory(fileSize : Nat) : async Bool {
 
     return ((fileSize * 2) + (await get_used_memory())) < 4_186_000_000; // (ca. 3.9 GB)
@@ -342,7 +343,7 @@ actor Main {
   };
 
   // Creates a new asset canister by sending a request to the Management canister.
-  // Later the wasm code is installed in the newly created canister
+  // The wasm code is installed in the newly created canister
   private func create_canister() : async (Text) {
 
     let settings_ : Types.CanisterSettings = {
@@ -383,6 +384,7 @@ actor Main {
     };
   };
 
+//Returns all drafts belonging to the caller
   public query (message) func get_drafts_by_supplier() : async [(Nat, Text)] {
     let caller = Principal.toText(message.caller);
     var draftList = supplierToDraftNodeID.get(caller);
@@ -396,6 +398,7 @@ actor Main {
     return Buffer.toArray(listOfDraft);
   };
 
+  //Returns draft with given id. If the id is not found, an empty draft is returned.
   public query (message) func get_draft_by_id(id : Nat) : async (Nat, Text, Types.Supplier, [(Text, Text)], [Nat], [(Text, Text)]) {
     let caller = Principal.toText(message.caller);
 
@@ -413,7 +416,7 @@ actor Main {
     };
   };
 
-  // Objects (DraftNode) are non-shared types and therefore cannot be returned to frontend but can be used in same actor class
+  // Searches and returns a draft as a new DraftNode object
   private func get_draft_as_object(id : Nat, caller : Text) : DraftNode.DraftNode {
 
     let emptyDraft = DraftNode.DraftNode(0, { userName = ""; userId = "" }, "");
