@@ -252,7 +252,7 @@ class SupplyChain extends React.Component {
       currentDraft.draftFile.map(({ url, canisterId }) => [url, canisterId]),
     ];
 
-    let response = await this.state.actor.safe_draft(...currentD);
+    let response = await this.state.actor.save_draft(...currentD);
     this.state.file = null;
     alert(response);
     this.loadImage(currentDraft.draftFile, true)
