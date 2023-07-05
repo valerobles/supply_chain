@@ -83,6 +83,7 @@ actor Main {
     };
 
   };
+
   //Creates a New node with n child nodes. Child nodes are given as a list of IDs in previousnodes.
   //CurrentOwner needs to be the same as "nextOwner" in the given childNodes to point to them.
   //previousNodes: Array of all child nodes. If the first elementdfx is "0", the list is assumed to be empty.
@@ -108,35 +109,13 @@ actor Main {
               ("Finalized node with ID: " #Nat.toText(draft.id), true);
             } else {
               // Map given Ids (previousNodes) to actual nodes, if they exist, they are added to childNodes
-              
-              //Counter to keep track of amount of added nodes
-              var c2 = 0;
-              var childNodes = List.filter<Types.Node>(
-                allNodes,
-                func n {
-                  var containsN = false;
-                  for (i in Array.vals(draft.previousNodesIDs)) {
-                    //Check if the node exists and if the currentOwner was defined as the nextOwner
-                    if (n.nodeId == i and n.nextOwner.userId == draft.owner.userId and n.nodeId <= nodeId) {
-                      // and n.nodeId!=nodeId+1
-                      containsN := true;
-                      c2 += 1;
-                    };
-                  };
 
-                  containsN;
-                },
-              );
-              //Counter for original amount of childnodes
-              var c1 = 0;
-              for (i in Array.vals(draft.previousNodesIDs)) {
-                c1 += 1;
-              };
+              var result = count_and_collect_valid_children(draft);
 
               //Check if all nodes were found
-              if (c1 == c2) {
+              if (result.0) {
                 //Create the new node with a list of child nodes and other metadata
-                let newNode = create_node(draft.id, childNodes, draft.title, draft.owner, draft.nextOwner, draft.labelToText, draft.assetKeys);
+                let newNode = create_node(draft.id, result.1, draft.title, draft.owner, draft.nextOwner, draft.labelToText, draft.assetKeys);
                 allNodes := List.push<Types.Node>(newNode, allNodes);
                 remove_draft(draft.id, caller);
                 ("Finalized node with ID: " #Nat.toText(draft.id), true);
@@ -151,7 +130,33 @@ actor Main {
 
   };
 
- 
+  //Matches every child of a given draft to existing nodes. 
+  //Returns true if all are present and have the correct owner, else returns false and the incomplete list
+  private func count_and_collect_valid_children(draft : DraftNode.DraftNode) : (Bool, List.List<Types.Node>) {
+    //Counter to keep track of amount of added nodes
+    var counter = 0;
+    var childNodes = List.filter<Types.Node>(
+      allNodes,
+      func n {
+
+        var containsNode = false;
+        for (i in Array.vals(draft.previousNodesIDs)) {
+          //Check if the node exists and if the currentOwner was defined as the nextOwner
+          if (n.nodeId == i and n.nextOwner.userId == draft.owner.userId and n.nodeId <= nodeId) {
+            // and n.nodeId!=nodeId+1
+            containsNode := true;
+            counter += 1;
+          };
+        };
+
+        containsNode;
+      },
+    );
+    if (draft.previousNodesIDs.size() == counter) {
+      return (true, childNodes);
+    };
+    return (false, childNodes);
+  };
   //Creates a new Node, increments nodeId BEFORE creating it.
   private func create_node(
     id : Nat,
@@ -210,12 +215,12 @@ actor Main {
 
   };
 
-//Returns nodes as Text
+  //Returns nodes as Text
   public query func show_all_nodes() : async Text {
     Utils.nodeListToText(allNodes);
   };
 
-//Takes all params for a draft and creates it
+  //Takes all params for a draft and creates it
   public shared (message) func save_draft(nodeId : Nat, nextOwner : Types.Supplier, labelToText : [(Text, Text)], previousNodes : [Nat], assetKeys : [(Text, Text)]) : async (Text) {
     let caller = Principal.toText(message.caller);
 
@@ -270,11 +275,11 @@ actor Main {
   };
 
   // Adds a new Supplier with to suppliers map with key = internet identity value = username
-  // Only suppliers can add new suppliers. Exception for the first supplier which can be added by anyone to prevent bootstrap problem. 
+  // Only suppliers can add new suppliers. Exception for the first supplier which can be added by anyone to prevent bootstrap problem.
   public shared (message) func add_supplier(supplier : Types.Supplier) : async Text {
     let caller = Principal.toText(message.caller);
 
-    // Exceptions for the first entry 
+    // Exceptions for the first entry
     // Suppliers can only be added  by authorized users. Existing IDs may not be overwritten
 
     if ((suppliers.size() == 0 or suppliers.get(caller) != null) and suppliers.get(supplier.userId) == null) {
@@ -286,11 +291,11 @@ actor Main {
   };
 
   // Saves sent wasm module to 'assetCanisterWasm' variable that is sent via chunking
-  public func save_wasm_module(blob : [Nat8]) : async ({size : Nat}) {
+  public func save_wasm_module(blob : [Nat8]) : async ({ size : Nat }) {
 
     assetCanisterWasm := Array.append<Nat8>(assetCanisterWasm, blob);
 
-    return {size = assetCanisterWasm.size()};
+    return { size = assetCanisterWasm.size() };
   };
 
   // Returns available asset canister for upload
@@ -384,7 +389,7 @@ actor Main {
     };
   };
 
-//Returns all drafts belonging to the caller
+  //Returns all drafts belonging to the caller
   public query (message) func get_drafts_by_supplier() : async [(Nat, Text)] {
     let caller = Principal.toText(message.caller);
     var draftList = supplierToDraftNodeID.get(caller);
