@@ -47,14 +47,13 @@ actor Main {
   //Returns greeting to logged in user
   public query (message) func greet() : async Text {
     let id = Principal.toText(message.caller);
-    let sup = suppliers.get(id);
-
-    switch (sup) {
+  
+    switch (suppliers.get(id)) {
       case null {
         return "Logged in with ID: " # id;
       };
-      case (?sup) {
-        return "Logged in as: " # sup # "\n Logged in with ID: " # id;
+      case (?supplier) {
+        return "Logged in as: " # supplier # "\n Logged in with ID: " # id;
       };
     };
 
