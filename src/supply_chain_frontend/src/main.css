@@ -36,11 +36,6 @@ button[type="submit"] {
   display: none;
 }
 
-.App {
-  font-family: Arial, sans-serif;
-  text-align: center;
-  padding: 20px;
-}
 
 .hero {
   background-image: url("/src/supply_chain_frontend/assets/logo2.svg");
