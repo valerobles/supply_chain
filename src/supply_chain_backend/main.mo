@@ -219,8 +219,12 @@ actor Main {
     Utils.nodeListToText(allNodes);
   };
 
+   public query func show_all_nodes_test() : async List.List<Types.Node> {
+    allNodes;
+  };
+
   //Takes all params for a draft and creates it
-  public shared (message) func save_draft(nodeId : Nat, nextOwner : Types.Supplier, labelToText : [(Text, Text)], previousNodes : [Nat], assetKeys : [(Text, Text)]) : async (Text) {
+  public shared (message) func save_draft(nodeId : Nat, title : Text, nextOwner : Types.Supplier, labelToText : [(Text, Text)], previousNodes : [Nat], assetKeys : [(Text, Text)]) : async (Text) {
     let caller = Principal.toText(message.caller);
 
     assert not Principal.isAnonymous(message.caller);
@@ -233,6 +237,7 @@ actor Main {
         return "no draft node found under given ID";
       };
       case (?draftTemp) {
+        draftTemp.title := title;
         draftTemp.nextOwner := nextOwner;
         draftTemp.labelToText := labelToText;
         draftTemp.previousNodesIDs := previousNodes;

@@ -5,10 +5,7 @@ import { HttpAgent } from "@dfinity/agent";
 import * as React from 'react';
 import { render } from 'react-dom';
 import React from 'react';
-
-
-
-
+import "./main.css"
 
 
 class SupplyChain extends React.Component {
@@ -38,11 +35,22 @@ class SupplyChain extends React.Component {
         nextOwner: { userName: '', userId: '' },
         labelToText: [{ label: '', text: '' }],
         files: [{ url: '', canisterId: '' }]
-      }
+      },
+      allNodes : [{
+        id: 0,
+        title: '',
+        owner: { userName: '', userId: '' },
+        childNodes: [{userId : ''}],
+        nextOwner: { userName: '', userId: '' },
+        labelToText: [{ label: '', text: '' }],
+        files: [{ url: '', canisterId: '' }]
+      }]
+
     };
 
 
   }
+
 
   async wasmHandler(event) {
     // TODO check if uploaded file has .wasm extension
@@ -72,7 +80,7 @@ class SupplyChain extends React.Component {
       ));
     }
 
-     await Promise.all(promises);
+    await Promise.all(promises);
 
     console.log("Wasm module upload done");
   };
@@ -130,6 +138,16 @@ class SupplyChain extends React.Component {
           ...this.state.currentDraft.nextOwner,
           userId: newNextOwner
         }
+      }
+    });
+  };
+
+  handleTitleChange = (event) => {
+    const newTitle = event.target.value;
+    this.setState({
+      currentDraft: {
+        ...this.state.currentDraft,
+        title: newTitle
       }
     });
   };
@@ -246,6 +264,7 @@ class SupplyChain extends React.Component {
     // Construct Arguments to send to backend canister
     const currentD = [
       BigInt(currentDraft.id),
+      currentDraft.title,
       { userName: currentDraft.nextOwner.userName, userId: currentDraft.nextOwner.userId },
       currentDraft.labelToText.map(({ label, text }) => [label, text]),
       currentDraft.previousNodesIDs,
@@ -283,16 +302,10 @@ class SupplyChain extends React.Component {
   async createNode() {
     const caller = await this.state.actor.get_caller();
 
-    // let title = document.getElementById("newNodeTitle");
-    // let nextOwnerID = document.getElementById("newNodeNextOwner");
-    // let children = document.getElementById("newNodeChildren");
-
     const title = this.state.currentDraft;
     const children = children.value;
     const nextOwner = nextOwnerID.value;
-    // title.value = "";
-    // children.value = "";
-    // nextOwnerID.value = "";
+
     let response = "";
     if (title.length > 0) {
       //Check if there are any child nodes. If not, the node is a "rootnode", which is a node without children
@@ -310,7 +323,6 @@ class SupplyChain extends React.Component {
         response = "Node was not created. Login to a supplier account to create nodes."
       }
       alert(response)
-      //document.getElementById("createResult").innerText = response;
     }
   }
 
@@ -391,7 +403,7 @@ class SupplyChain extends React.Component {
 
 
     document.getElementById("createCanister").style.display = "block";
-    
+
 
     const greeting = await this.state.actor.greet();
     document.getElementById("greeting").innerText = greeting;
@@ -407,10 +419,140 @@ class SupplyChain extends React.Component {
 
 
 
-  async getNodes() {
-    let all = await this.state.actor.show_all_nodes();
-    document.getElementById("allNodes").innerHTML = all;
+  // async getNodes() {
+  //   let all = await this.state.actor.show_all_nodes();
+  //   document.getElementById("allNodes").innerHTML = all;
+  // }
+
+  async setCurrentDraft(id) {
+    let draft = await this.state.actor.get_draft_by_id(id);
+    console.log(draft);
+    const { currentDraft } = this.state;
+    currentDraft.id = Number(draft[0]);
+    currentDraft.title = draft[1];
+    currentDraft.nextOwner = draft[2];
+    currentDraft.labelToText = draft[3].map(([label, text]) => ({
+      label,
+      text
+    }));
+    currentDraft.previousNodesIDs = draft[4];
+    currentDraft.draftFile = draft[5].map(([url, canisterId]) => ({
+      url,
+      canisterId
+    }));
+    this.setState({ currentDraft: currentDraft });
+
+    // remove images and file from the last current draft
+    const section = document.querySelector('#draftImage');
+    while (section.firstChild) {
+      section.removeChild(section.firstChild);
+    }
+
+    this.loadImage(currentDraft.draftFile, true);
+
   }
+
+  async getNodes() {
+    let all = await this.state.actor.show_all_nodes_test();
+    console.log(all);
+    all = all.flat(Infinity)
+    const formattedNodes = all.map((node) => ({
+      id: Number(node.nodeId) ,
+      title: node.title || "",
+      owner: {
+        userName: node.owner?.userName || "",
+        userId: node.owner?.userId || "",
+      },
+      nextOwner: {
+        userName: node.nextOwner?.userName || "",
+        userId: node.nextOwner?.userId || "",
+      },
+      childNodes : (node.previousNodes || []).map((userId) => ({
+        userId
+      })),
+      labelToText: (node.texts || []).map(([label, text]) => ({
+        label,
+        text
+      })),
+      files: (node.assetKey || []).map(([url, canisterId]) => ({
+        url,
+        canisterId
+      })),
+    }));
+  
+    this.setState({ allNodes: formattedNodes });
+    console.log(this.state.allNodes)
+    this.showNodes()
+  }
+
+  // renderNodes() {
+  //   if (this.state.allNodes[0].id != 0) {
+    
+  //         return this.state.allNodes.map((node, index) => (
+  //           <div className="node-list" key={index}>
+  //             <div className="node-box">
+  //               <p>Title: {node.title}</p>
+  //               <p>Owner User Name: {node.owner.userName}</p>
+  //             </div>
+  //             {node.childNodes && node.childNodes.length > 0
+  //               ? this.renderChildNodes(node.childNodes)
+  //               : null}
+  //           </div>
+  //         ));
+  //       }
+  
+  //   }
+  
+
+  // renderChildNodes(childNodeIds) {
+  //     const childNodes = this.state.allNodes.filter(node => childNodeIds.includes(node.id));
+  //     return childNodes.map((childNode, index) => (
+  //       <div className="child-node" key={index}>
+  //         <div className="arrow"></div>
+  //         <div className="node-box">
+  //           <p>Title: {childNode.title}</p>
+  //           <p>Owner User Name: {childNode.owner.userName}</p>
+  //         </div>
+  //         {childNode.childNodes && childNode.childNodes.length > 0
+  //           ? this.renderChildNodes(childNode.childNodes)
+  //           : null}
+  //       </div>
+  //     ));
+  //   }
+
+
+  showNodes() {
+    if (this.state.allNodes[0].id != 0) {
+      return(
+        <div className="node-list">
+          {this.state.allNodes.map((node, index) => (
+            <div className="node-box" key={index}>
+              <p>Title: {node.title}</p>
+              <p>Owner User Name: {node.owner.userName}</p>
+            </div>
+          ))}
+        </div>
+      )
+    }
+  
+  }
+
+ async renderNode(node) {
+    const { id, title, childNodes } = node;
+    return (
+      <div key={id} className="node">
+        <p>{title}</p>
+        <div className="child-nodes">
+          {childNodes && childNodes.length > 0
+            ? childNodes.map((childNode) => this.renderNode(childNode))
+            : null}
+        </div>
+      </div>
+    );
+   }
+
+
+
   async getSuppliers() {
     let all = await this.state.actor.get_suppliers();
     document.getElementById("suppliers").innerHTML = all;
@@ -434,8 +576,8 @@ class SupplyChain extends React.Component {
     let availableAssetCanister = await this.getAvailableAssetCanister(fileSize);
 
     if (availableAssetCanister != this.state.assets_canisterid) {
-        this.state.assets_canisterid = availableAssetCanister
-        await this.createActorRef();
+      this.state.assets_canisterid = availableAssetCanister
+      await this.createActorRef();
     }
 
 
@@ -482,7 +624,7 @@ class SupplyChain extends React.Component {
 
     let availableAssetCanister = await this.prepareAssetCanister(this.state.file.size);
 
-    
+
 
     const { currentDraft } = this.state;
 
@@ -598,39 +740,14 @@ class SupplyChain extends React.Component {
     section?.appendChild(fragment);
   }
 
-  async setCurrentDraft(id) {
-    let draft = await this.state.actor.get_draft_by_id(id);
-    console.log(draft);
-    const { currentDraft } = this.state;
-    currentDraft.id = Number(draft[0]);
-    currentDraft.title = draft[1];
-    currentDraft.nextOwner = draft[2];
-    currentDraft.labelToText = draft[3].map(([label, text]) => ({
-      label,
-      text
-    }));
-    currentDraft.previousNodesIDs = draft[4];
-    currentDraft.draftFile = draft[5].map(([url, canisterId]) => ({
-      url,
-      canisterId
-    }));
-    this.setState({ currentDraft: currentDraft });
 
-    // remove images and file from the last current draft
-    const section = document.querySelector('#draftImage');
-    while (section.firstChild) {
-      section.removeChild(section.firstChild);
-    }
-
-    this.loadImage(currentDraft.draftFile, true);
-
-  }
   showDraft() {
 
     const tmpDraft = this.state.currentDraft;
 
     if (tmpDraft.id != 0) {
       return (<div><h1>Complete "{tmpDraft.title}" Draft</h1>
+        <input value={tmpDraft.title} onChange={(event) => this.handleTitleChange(event)}></input>
         <table>
           <tbody>
             <tr>
@@ -672,7 +789,6 @@ class SupplyChain extends React.Component {
         <section>
           <label for="image">Image:</label>
           <input id="image" alt="image" onChange={(e) => this.handleFileSelection(e)} type="file" accept="image/x-png,image/jpeg,image/gif,image/svg+xml,image/webp,image/*,.pdf" />
-          {/* <button className="upload" onClick={() => this.upload()}>Upload</button> */}
           <section id="draftImage"></section>
         </section>
 
@@ -713,15 +829,14 @@ class SupplyChain extends React.Component {
   render() {
     const { drafts } = this.state;
     return (
-      <div>
-        <h1>Supply Chain</h1>
-        {/* <button onClick={() => this.prepareAssetCanister()}>Call Asset Canister</button> */}
+      <div className="App">
         <div id="createCanister" style={{ display: "none" }} >
-          <button onClick={() => this.installWasm()}>Install Wasm</button>
           <input id="image" alt="image" onChange={(e) => this.wasmHandler(e)} type="file" />
-          {/* <button onClick={() => this.createCanister()}>Create Canister</button> */}
+          <button onClick={() => this.installWasm()}>Install Wasm</button>
         </div>
- 
+        <h1>Supply Chain</h1>
+        <div className="hero"></div>
+
         <button type="submit" id="login" onClick={() => this.login()}>Login</button>
         <h2 id="greeting"></h2>
         <div id="addSupplier" style={{ display: "none" }} >
@@ -747,6 +862,7 @@ class SupplyChain extends React.Component {
           <br></br>
           <button onClick={() => this.getNodes()}>Get all nodes</button>
           <div id="allNodes"></div>
+          {this.showNodes()}
           <br></br>
           <hr></hr>
           <p>Get node by Id:</p>
