@@ -7,7 +7,7 @@ import { render } from 'react-dom';
 import React from 'react';
 import "./main.css"
 import Flow from "./Flow";
-
+import { MarkerType } from "reactflow";
 
 
 class SupplyChain extends React.Component {
@@ -521,7 +521,10 @@ class SupplyChain extends React.Component {
     const formattedEdges = tmpEdges.map((e) => ({
       id: e.start + "-" + e.end,
       source: e.start,
-      target: e.end
+      target: e.end,
+      markerEnd: {
+        type: MarkerType.ArrowClosed
+      }
     }));
     this.setState({ edges: formattedEdges });
 

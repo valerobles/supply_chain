@@ -301,15 +301,15 @@ actor Main {
           node.previousNodes,
           func n {
             //output:= output# "{id:"#Nat.toText(nodeId)#"-"#Nat.toText(n.nodeId)#" }";
-           
-             let appendix =[{
-                 start = Nat.toText(nodeId);
-              end = Nat.toText(n.nodeId);
+
+            let appendix = [{
+              start = Nat.toText(n.nodeId);
+              end = Nat.toText(nodeId);
             }];
-            if(output[0].start==""){
-            output := appendix;
-            }else{
-               output := Array.append<Types.Edge>(output, appendix);
+            if (output[0].start == "") {
+              output := appendix;
+            } else {
+              output := Array.append<Types.Edge>(output, appendix);
             };
             let childNodes = n.previousNodes;
             switch (childNodes) {
@@ -325,10 +325,10 @@ actor Main {
     output;
   };
   //recursively returns all edges from a tree
-  let yFactor=100;
+  let yFactor = 100;
   private func get_simple_node_tree(nodeId : Nat, level : Nat) : ([Types.SimpleNode]) {
-var levelY=0;
-    var output = [{ id = ""; title = ""; levelX = 0 ;levelY=0}];
+    var levelY = 0;
+    var output = [{ id = ""; title = ""; levelX = 0; levelY = 0 }];
     var node = Utils.get_node_by_id(nodeId, allNodes);
     switch (node) {
       case null { output := [] };
@@ -337,18 +337,18 @@ var levelY=0;
         List.iterate<Types.Node>(
           node.previousNodes,
           func n {
-            let appendix =[{
+            let appendix = [{
               id = Nat.toText(n.nodeId);
               title = n.title;
               levelX = level;
-              levelY=levelY;
+              levelY = levelY;
             }];
-            if(output[0].id==""){
-            output := appendix;
-            }else{
-               output := Array.append<Types.SimpleNode>(output, appendix);
+            if (output[0].id == "") {
+              output := appendix;
+            } else {
+              output := Array.append<Types.SimpleNode>(output, appendix);
             };
-            levelY:=levelY+yFactor;
+            levelY := levelY +yFactor;
             let childNodes = n.previousNodes;
             switch (childNodes) {
               case (null) {};
@@ -362,15 +362,19 @@ var levelY=0;
     };
     output;
   };
+
+  //Returns edges in format needed for UI
   public query func get_all_edges(nodeId : Nat) : async ([Types.Edge]) {
     get_edges(nodeId);
   };
+
+  //Returns node in format needed for UI
   public query func get_all_simple_node_tree(nodeId : Nat) : async ([Types.SimpleNode]) {
     var node = Utils.get_node_by_id(nodeId, allNodes);
     switch (node) {
       case null { [] };
       case (?node) {
-        Array.append<Types.SimpleNode>([{ id = Nat.toText(node.nodeId); title = node.title; levelX = 0 ;levelY=0}], get_simple_node_tree(nodeId, 300));
+        Array.append<Types.SimpleNode>([{ id = Nat.toText(node.nodeId); title = node.title; levelX = 0; levelY = 0 }], get_simple_node_tree(nodeId, 300));
       };
     };
   };
