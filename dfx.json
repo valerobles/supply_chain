@@ -16,6 +16,11 @@
       "main": "src/supply_chain_backend/main.mo",
       "type": "motoko"
     },
+    "testing": {
+      "main": "src/testing/Test.mo",
+      "type": "motoko"
+     
+    },
     "supply_chain_frontend": {
       "dependencies": [
         "supply_chain_backend"
