@@ -301,10 +301,16 @@ actor Main {
           node.previousNodes,
           func n {
             //output:= output# "{id:"#Nat.toText(nodeId)#"-"#Nat.toText(n.nodeId)#" }";
-            output := [{
-              start = Nat.toText(nodeId);
+           
+             let appendix =[{
+                 start = Nat.toText(nodeId);
               end = Nat.toText(n.nodeId);
             }];
+            if(output[0].start==""){
+            output := appendix;
+            }else{
+               output := Array.append<Types.Edge>(output, appendix);
+            };
             let childNodes = n.previousNodes;
             switch (childNodes) {
               case (null) {};
@@ -331,12 +337,17 @@ var levelY=0;
         List.iterate<Types.Node>(
           node.previousNodes,
           func n {
-            output := [{
+            let appendix =[{
               id = Nat.toText(n.nodeId);
               title = n.title;
               levelX = level;
               levelY=levelY;
             }];
+            if(output[0].id==""){
+            output := appendix;
+            }else{
+               output := Array.append<Types.SimpleNode>(output, appendix);
+            };
             levelY:=levelY+yFactor;
             let childNodes = n.previousNodes;
             switch (childNodes) {

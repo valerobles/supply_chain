@@ -781,7 +781,7 @@ class SupplyChain extends React.Component {
           <tbody>
             <tr>
               <td>Next Owner ID:</td><td><input value={tmpDraft.nextOwner.userId} onChange={(event) => this.handleNextOwnerChange(event)}></input></td>
-              <td>Child nodes:</td><td><input type ="text" value={tmpDraft.previousNodesIDs} onChange={(event) => this.handleChildNodesChange(event)}></input></td>
+              <td>Child nodes:</td><td><input value={tmpDraft.previousNodesIDs} onChange={(event) => this.handleChildNodesChange(event)}></input></td>
             </tr>
           </tbody>
         </table>
