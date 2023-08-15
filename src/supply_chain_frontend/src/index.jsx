@@ -58,7 +58,7 @@ class SupplyChain extends React.Component {
   async wasmHandler(event) {
     // TODO check if uploaded file has .wasm extension
     this.state.wasm = event.target.files[0];
-    console.log(this.state.wasm)
+
 
   }
 
@@ -179,7 +179,6 @@ class SupplyChain extends React.Component {
 
     if (nodeExists) {
       let node = await this.state.actor.get_node_by_id(idValue); // maybe cast in BigInt
-      console.log(node);
       const { currentNode } = this.state;
       currentNode.id = idInput;
       currentNode.title = node[0];
@@ -346,7 +345,7 @@ class SupplyChain extends React.Component {
       if (tValue.length > 0) {
         //Check if there are any child nodes. If not, the node is a "rootnode", which is a node without children
 
-         response = await this.state.actor.create_draft_node(tValue);
+        response = await this.state.actor.create_draft_node(tValue);
         alert(response)
         this.getDraftBySupplier()
 
@@ -358,7 +357,7 @@ class SupplyChain extends React.Component {
 
   async getDraftBySupplier() {
     let isSupplier = await this.state.actor.is_supplier_logged_in();
-    console.log(isSupplier);
+    
     let myElement = document.getElementById("draftsList");
     if (isSupplier) {
 
@@ -371,7 +370,7 @@ class SupplyChain extends React.Component {
 
       });
       this.setState({ drafts: tempDrafts });
-      console.log(this.state.drafts)
+  
     } else {
       myElement.style.display = "none";
     }
@@ -394,7 +393,6 @@ class SupplyChain extends React.Component {
     // At this point we're authenticated, and we can get the identity from the auth client:
     const identity = authClient.getIdentity();
 
-    console.log(identity);
     // Using the identity obtained from the auth client, we can create an agent to interact with the IC.
     this.state.agent = new HttpAgent({ identity });
     const agent = this.state.agent;
@@ -419,17 +417,8 @@ class SupplyChain extends React.Component {
   }
 
 
-
-
-
-  // async getNodes() {
-  //   let all = await this.state.actor.show_all_nodes();
-  //   document.getElementById("allNodes").innerHTML = all;
-  // }
-
   async setCurrentDraft(id) {
     let draft = await this.state.actor.get_draft_by_id(id);
-    console.log(draft);
     const { currentDraft } = this.state;
     currentDraft.id = Number(draft[0]);
     currentDraft.title = draft[1];
@@ -454,34 +443,11 @@ class SupplyChain extends React.Component {
     this.loadImage(currentDraft.draftFile, true);
 
   }
-  async calcLevel(lvl) {
-    return parseInt(lvl * 200);
-  }
-  //id: '1-2', source: '1', target: '2'
-  async getEdges(parentId) {
-    let tmpEdges = await this.state.actor.get_all_edges(parentId);
-    tmpEdges = tmpEdges.flat(Infinity);
-    const formattedEdges = tmpEdges.map((e) => ({
-      id: e.start + "-" + e.end,
-      source: e.start,
-      target: e.end
-    }));
-    this.setState({ edges: formattedEdges });
 
-    let tmpEtree = await this.state.actor.get_all_simple_node_tree(parentId);
-    tmpEtree = tmpEtree.flat(Infinity);
-    const formattedTree = tmpEtree.map((t) => ({
-      id: t.id,
-      data: { label: t.title },
-      position: { x: Number(t.levelX), y: Number(t.levelY) }
-      //position : { x: toString(parseInt(t.level)*100), y: 0 }
-    }));
-    this.setState({ tree: formattedTree });
-  }
+
 
   async getNodes() {
     let all = await this.state.actor.show_all_nodes_test();
-    console.log(all);
     all = all.flat(Infinity)
     const formattedNodes = all.map((node) => ({
       id: Number(node.nodeId),
@@ -508,45 +474,8 @@ class SupplyChain extends React.Component {
     }));
 
     this.setState({ allNodes: formattedNodes });
-    console.log(this.state.allNodes)
     this.showNodes()
   }
-
-  // renderNodes() {
-  //   if (this.state.allNodes[0].id != 0) {
-
-  //         return this.state.allNodes.map((node, index) => (
-  //           <div className="node-list" key={index}>
-  //             <div className="node-box">
-  //               <p>Title: {node.title}</p>
-  //               <p>Owner User Name: {node.owner.userName}</p>
-  //             </div>
-  //             {node.childNodes && node.childNodes.length > 0
-  //               ? this.renderChildNodes(node.childNodes)
-  //               : null}
-  //           </div>
-  //         ));
-  //       }
-
-  //   }
-
-
-  // renderChildNodes(childNodeIds) {
-  //     const childNodes = this.state.allNodes.filter(node => childNodeIds.includes(node.id));
-  //     return childNodes.map((childNode, index) => (
-  //       <div className="child-node" key={index}>
-  //         <div className="arrow"></div>
-  //         <div className="node-box">
-  //           <p>Title: {childNode.title}</p>
-  //           <p>Owner User Name: {childNode.owner.userName}</p>
-  //         </div>
-  //         {childNode.childNodes && childNode.childNodes.length > 0
-  //           ? this.renderChildNodes(childNode.childNodes)
-  //           : null}
-  //       </div>
-  //     ));
-  //   }
-
 
   showNodes() {
     if (this.state.allNodes[0].id != 0) {
@@ -585,19 +514,31 @@ class SupplyChain extends React.Component {
     document.getElementById("suppliers").innerHTML = all;
 
   }
+  //converts nodes and edges to format needed for UI
+  async getEdgesAndSimpleNodes(parentId) {
+    let tmpEdges = await this.state.actor.get_all_edges(parentId);
+    tmpEdges = tmpEdges.flat(Infinity);
+    const formattedEdges = tmpEdges.map((e) => ({
+      id: e.start + "-" + e.end,
+      source: e.start,
+      target: e.end
+    }));
+    this.setState({ edges: formattedEdges });
+
+    let tmpEtree = await this.state.actor.get_all_simple_node_tree(parentId);
+    tmpEtree = tmpEtree.flat(Infinity);
+    const formattedTree = tmpEtree.map((t) => ({
+      id: t.id,
+      data: { label: t.title },
+      position: { x: Number(t.levelX), y: Number(t.levelY) }
+    }));
+    this.setState({ tree: formattedTree });
+  }
   async getChildNodes() {
-    //this.getEdges(tValue);
     let tree = document.getElementById("parentId");
     const tValue = parseInt(tree.value, 10);
     if (tValue >= 0) {
-      // let nodes = await this.state.actor.show_all_child_nodes(tValue);
-      // nodes = nodes.replace(/\n/g, '<br>');
-      // console.log("Nodes:" + nodes)
-      // if (nodes === "") { nodes = "No child nodes found" }
-      // document.getElementById("treeResult").innerHTML = nodes;
-      this.getEdges(tValue);
-    } else {
-       document.getElementById("treeResult").innerHTML = "Error: Invalid ID"
+      this.getEdgesAndSimpleNodes(tValue);
     }
   }
 
@@ -616,7 +557,6 @@ class SupplyChain extends React.Component {
   async getAvailableAssetCanister(fileSize) {
 
     let canisterID = await this.state.actor.get_available_asset_canister(fileSize);
-    console.log(canisterID)
     return canisterID;
 
   }
@@ -638,7 +578,6 @@ class SupplyChain extends React.Component {
   // https://github.com/carstenjacobsen/examples/tree/master/motoko/fileupload
   async handleFileSelection(event) {
     this.state.file = event.target.files[0];
-    console.log(this.state.file)
 
   }
 
@@ -659,7 +598,6 @@ class SupplyChain extends React.Component {
 
     let newName = this.state.file.name.replace(/\s/g, ""); // remove whitespaces so no error occurs in the GET method URL
     this.state.file = new File([this.state.file], newName, { type: this.state.file.type });
-    console.log(this.state.file);
 
 
 
@@ -854,9 +792,8 @@ class SupplyChain extends React.Component {
 
   }
 
-   showTree() {
-    console.log(this.state.tree)
-    if (this.state.tree.length>0) {
+  showTree() {
+    if (this.state.tree.length > 0) {
       return (<Flow nodes={this.state.tree} edges={this.state.edges} />);
     }
   }
@@ -864,8 +801,6 @@ class SupplyChain extends React.Component {
     const { drafts } = this.state;
     return (
       <div className="App">
-        {/* <button onClick={() => this.getEdges(3)}>Get all edges</button>
- */}
         <div id="createCanister" style={{ display: "none" }} >
           <input id="image" alt="image" onChange={(e) => this.wasmHandler(e)} type="file" />
           <button onClick={() => this.installWasm()}>Install Wasm</button>
