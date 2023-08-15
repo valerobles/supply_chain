@@ -47,7 +47,7 @@ actor Main {
   //Returns greeting to logged in user
   public query (message) func greet() : async Text {
     let id = Principal.toText(message.caller);
-  
+
     switch (suppliers.get(id)) {
       case null {
         return "Logged in with ID: " # id;
@@ -83,6 +83,21 @@ actor Main {
 
   };
 
+  //FOR TESTING
+  public shared func set_up_test_data() {
+    let newNode1 = create_node(1, List.nil(), "One", { userId = "0"; userName = "test" }, { userId = "0"; userName = "test" }, [], []);
+    allNodes := List.push<Types.Node>(newNode1, allNodes);
+
+    var childNodes1 = List.nil<Types.Node>();
+    childNodes1 := List.push<Types.Node>(newNode1, childNodes1);
+    let newNode2 = create_node(2, childNodes1, "Two", { userId = "0"; userName = "test" }, { userId = "0"; userName = "test" }, [], []);
+    allNodes := List.push<Types.Node>(newNode2, allNodes);
+
+    var childNodes2 = List.nil<Types.Node>();
+    childNodes2 := List.push<Types.Node>(newNode2, childNodes2);
+    let newNode3 = create_node(3, childNodes2, "Three", { userId = "0"; userName = "test" }, { userId = "0"; userName = "test" }, [], []);
+    allNodes := List.push<Types.Node>(newNode3, allNodes);
+  };
   //Creates a New node with n child nodes. Child nodes are given as a list of IDs in previousnodes.
   //CurrentOwner needs to be the same as "nextOwner" in the given childNodes to point to them.
   //previousNodes: Array of all child nodes. If the first elementdfx is "0", the list is assumed to be empty.
@@ -129,7 +144,7 @@ actor Main {
 
   };
 
-  //Matches every child of a given draft to existing nodes. 
+  //Matches every child of a given draft to existing nodes.
   //Returns true if all are present and have the correct owner, else returns false and the incomplete list
   private func count_and_collect_valid_children(draft : DraftNode.DraftNode) : (Bool, List.List<Types.Node>) {
     //Counter to keep track of amount of added nodes
@@ -219,7 +234,7 @@ actor Main {
     Utils.nodeListToText(allNodes);
   };
 
-   public query func show_all_nodes_test() : async List.List<Types.Node> {
+  public query func show_all_nodes_test() : async List.List<Types.Node> {
     allNodes;
   };
 
@@ -274,6 +289,35 @@ actor Main {
     output;
   };
 
+  //recursively returns all edges from a tree in the format: { id: '1-2', source: '1', target: '2' }
+  private func get_edges(nodeId : Nat) : ([Types.Edge]) {
+
+    var output = [{ start = ""; end = "" }];
+    var node = Utils.get_node_by_id(nodeId, allNodes);
+    switch (node) {
+      case null { output := [] };
+      case (?node) {
+        List.iterate<Types.Node>(
+          node.previousNodes,
+          func n {
+            //output:= output# "{id:"#Nat.toText(nodeId)#"-"#Nat.toText(n.nodeId)#" }";
+            output := Array.append<Types.Edge>(output, [{ start = Nat.toText(nodeId); end = Nat.toText(n.nodeId) }]);
+            let childNodes = n.previousNodes;
+            switch (childNodes) {
+              case (null) {};
+              case (?nchildNodes) {
+                output := get_edges(n.nodeId);
+              };
+            };
+          },
+        );
+      };
+    };
+    output;
+  };
+  public query func get_all_edges(nodeId : Nat) : async ([Types.Edge]) {
+    get_edges(nodeId);
+  };
   public query func show_all_child_nodes(nodeId : Nat) : async Text {
     show_child_nodes(nodeId, "");
   };

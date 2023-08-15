@@ -6,6 +6,8 @@ import * as React from 'react';
 import { render } from 'react-dom';
 import React from 'react';
 import "./main.css"
+import Flow from "./Flow";
+
 
 
 class SupplyChain extends React.Component {
@@ -36,16 +38,28 @@ class SupplyChain extends React.Component {
         labelToText: [{ label: '', text: '' }],
         files: [{ url: '', canisterId: '' }]
       },
-      allNodes : [{
+      allNodes: [{
         id: 0,
         title: '',
         owner: { userName: '', userId: '' },
-        childNodes: [{userId : ''}],
+        childNodes: [{ userId: '' }],
         nextOwner: { userName: '', userId: '' },
         labelToText: [{ label: '', text: '' }],
         files: [{ url: '', canisterId: '' }]
-      }]
-
+      }],
+      edges: [{ id: '1-2', source: '1', target: '2' }] ,
+      tree: [
+        {
+          id: '1',
+          data: { label: 'Hello1' },
+          position: { x: 0, y: 0 },
+        },
+        {
+          id: '2',
+          data: { label: 'Hello' },
+          position: { x: 100, y: 100 },
+        },
+      ]
     };
 
 
@@ -457,7 +471,7 @@ class SupplyChain extends React.Component {
     console.log(all);
     all = all.flat(Infinity)
     const formattedNodes = all.map((node) => ({
-      id: Number(node.nodeId) ,
+      id: Number(node.nodeId),
       title: node.title || "",
       owner: {
         userName: node.owner?.userName || "",
@@ -467,7 +481,7 @@ class SupplyChain extends React.Component {
         userName: node.nextOwner?.userName || "",
         userId: node.nextOwner?.userId || "",
       },
-      childNodes : (node.previousNodes || []).map((userId) => ({
+      childNodes: (node.previousNodes || []).map((userId) => ({
         userId
       })),
       labelToText: (node.texts || []).map(([label, text]) => ({
@@ -479,7 +493,7 @@ class SupplyChain extends React.Component {
         canisterId
       })),
     }));
-  
+
     this.setState({ allNodes: formattedNodes });
     console.log(this.state.allNodes)
     this.showNodes()
@@ -487,7 +501,7 @@ class SupplyChain extends React.Component {
 
   // renderNodes() {
   //   if (this.state.allNodes[0].id != 0) {
-    
+
   //         return this.state.allNodes.map((node, index) => (
   //           <div className="node-list" key={index}>
   //             <div className="node-box">
@@ -500,9 +514,9 @@ class SupplyChain extends React.Component {
   //           </div>
   //         ));
   //       }
-  
+
   //   }
-  
+
 
   // renderChildNodes(childNodeIds) {
   //     const childNodes = this.state.allNodes.filter(node => childNodeIds.includes(node.id));
@@ -523,7 +537,7 @@ class SupplyChain extends React.Component {
 
   showNodes() {
     if (this.state.allNodes[0].id != 0) {
-      return(
+      return (
         <div className="node-list">
           {this.state.allNodes.map((node, index) => (
             <div className="node-box" key={index}>
@@ -534,10 +548,10 @@ class SupplyChain extends React.Component {
         </div>
       )
     }
-  
+
   }
 
- async renderNode(node) {
+  async renderNode(node) {
     const { id, title, childNodes } = node;
     return (
       <div key={id} className="node">
@@ -549,7 +563,7 @@ class SupplyChain extends React.Component {
         </div>
       </div>
     );
-   }
+  }
 
 
 
@@ -752,7 +766,7 @@ class SupplyChain extends React.Component {
           <tbody>
             <tr>
               <td>Next Owner ID:</td><td><input value={tmpDraft.nextOwner.userId} onChange={(event) => this.handleNextOwnerChange(event)}></input></td>
-              <td>Child nodes:</td><td><input value={tmpDraft.previousNodesIDs} onChange={(event) => this.handleChildNodesChange(event)} placeholder="1,2,..."></input></td>
+              <td>Child nodes:</td><td><input value={tmpDraft.previousNodesIDs} onChange={(event) => this.handleChildNodesChange(event)}></input></td>
             </tr>
           </tbody>
         </table>
@@ -826,10 +840,28 @@ class SupplyChain extends React.Component {
   }
 
 
+  async getNodes() {
+    [
+      {
+        id: '1',
+        data: { label: 'Hello1' },
+        position: { x: 0, y: 0 },
+      },
+      {
+        id: '2',
+        data: { label: 'Hello' },
+        position: { x: 100, y: 100 },
+      },
+    ];
+  }
+  async getEdges() { [{ id: '1-2', source: '1', target: '2' }] }
   render() {
     const { drafts } = this.state;
     return (
       <div className="App">
+        <div>  <Flow nodes={this.state.tree} edges={this.state.edges} /></div>
+
+
         <div id="createCanister" style={{ display: "none" }} >
           <input id="image" alt="image" onChange={(e) => this.wasmHandler(e)} type="file" />
           <button onClick={() => this.installWasm()}>Install Wasm</button>

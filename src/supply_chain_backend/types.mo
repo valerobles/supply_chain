@@ -1,7 +1,7 @@
 import L "mo:base/List";
 
 module {
-  //A supplier is an entity that has to be registered in the App. One must be
+    //A supplier is an entity that has to be registered in the App. One must be
     public type Supplier = {
         userName : Text;
         userId : Text; // TODO: change to type Principal?
@@ -29,7 +29,10 @@ module {
         batch_name : Text;
         content : [Nat8];
     };
-
+    public type Edge = {
+        start : Text;
+        end : Text;
+    };
     public type CanisterSettings = {
         controllers : ?[Principal];
         compute_allocation : ?Nat;
@@ -42,27 +45,27 @@ module {
     // Management Canister Reference Methods
     public type Management = actor {
 
-    create_canister : {
-      settings : (s : CanisterSettings);
-    } -> async { canister_id : canister_id };
+        create_canister : {
+            settings : (s : CanisterSettings);
+        } -> async { canister_id : canister_id };
 
-    canister_status : { canister_id : canister_id } -> async {
-      cycles : Nat;
-      memory_size : Nat;
+        canister_status : { canister_id : canister_id } -> async {
+            cycles : Nat;
+            memory_size : Nat;
+        };
+
+        install_code : ({
+            mode : { #install; #reinstall; #upgrade };
+            canister_id : canister_id;
+            wasm_module : Blob;
+            arg : Blob;
+        }) -> async ();
+
+        stop_canister : { canister_id : canister_id } -> async ();
+
+        delete_canister : { canister_id : canister_id } -> async ();
+
+        deposit_cycles : { canister_id : canister_id } -> ();
+
     };
-
-    install_code : ({
-      mode : { #install; #reinstall; #upgrade };
-      canister_id : canister_id;
-      wasm_module : Blob;
-      arg : Blob;
-    }) -> async ();
-
-    stop_canister : { canister_id : canister_id } -> async ();
-
-    delete_canister : { canister_id : canister_id } -> async ();
-
-    deposit_cycles :  {canister_id : canister_id} -> ();
-
-  };
 };
