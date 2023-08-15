@@ -16,6 +16,7 @@ import 'reactflow/dist/style.css';
 // ];
 // const edges = [{ id: '1-2', source: '1', target: '2' }];
 function Flow({nodes, edges}) {
+
   return (
     <div style={{ height: '300px' }}>
       <ReactFlow nodes={nodes} edges={edges}>
@@ -24,6 +25,7 @@ function Flow({nodes, edges}) {
       </ReactFlow>
     </div>
   );
+
 }
 
 export default Flow;

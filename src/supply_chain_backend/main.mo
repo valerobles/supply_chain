@@ -85,17 +85,17 @@ actor Main {
 
   //FOR TESTING
   public shared func a_set_up_test_data() {
-    let newNode1 = create_node(1, List.nil(), "One", { userId = "0"; userName = "test" }, { userId = "0"; userName = "test" }, [], []);
+    let newNode1 = create_node(1000, List.nil(), "One", { userId = "0"; userName = "test" }, { userId = "0"; userName = "test" }, [], []);
     allNodes := List.push<Types.Node>(newNode1, allNodes);
 
     var childNodes1 = List.nil<Types.Node>();
     childNodes1 := List.push<Types.Node>(newNode1, childNodes1);
-    let newNode2 = create_node(2, childNodes1, "Two", { userId = "0"; userName = "test" }, { userId = "0"; userName = "test" }, [], []);
+    let newNode2 = create_node(1001, childNodes1, "Two", { userId = "0"; userName = "test" }, { userId = "0"; userName = "test" }, [], []);
     allNodes := List.push<Types.Node>(newNode2, allNodes);
 
     var childNodes2 = List.nil<Types.Node>();
     childNodes2 := List.push<Types.Node>(newNode2, childNodes2);
-    let newNode3 = create_node(3, childNodes2, "Three", { userId = "0"; userName = "test" }, { userId = "0"; userName = "test" }, [], []);
+    let newNode3 = create_node(1002, childNodes2, "Three", { userId = "0"; userName = "test" }, { userId = "0"; userName = "test" }, [], []);
     allNodes := List.push<Types.Node>(newNode3, allNodes);
   };
   //Creates a New node with n child nodes. Child nodes are given as a list of IDs in previousnodes.
@@ -289,7 +289,7 @@ actor Main {
     output;
   };
 
-  //recursively returns all edges from a tree in the format: { id: '1-2', source: '1', target: '2' }
+  //recursively returns all edges from a tree
   private func get_edges(nodeId : Nat) : ([Types.Edge]) {
 
     var output = [{ start = ""; end = "" }];
@@ -301,9 +301,11 @@ actor Main {
           node.previousNodes,
           func n {
             //output:= output# "{id:"#Nat.toText(nodeId)#"-"#Nat.toText(n.nodeId)#" }";
-            output :=  [{ start = Nat.toText(nodeId); end = Nat.toText(n.nodeId) }];
-           Debug.print(Nat.toText(nodeId));
-           let childNodes = n.previousNodes;
+            output := [{
+              start = Nat.toText(nodeId);
+              end = Nat.toText(n.nodeId);
+            }];
+            let childNodes = n.previousNodes;
             switch (childNodes) {
               case (null) {};
               case (?nchildNodes) {
@@ -316,8 +318,47 @@ actor Main {
     };
     output;
   };
+  //recursively returns all edges from a tree
+  private func get_simple_node_tree(nodeId : Nat, level : Nat) : ([Types.SimpleNode]) {
+
+    var output = [{ id = ""; title = ""; level = 0 }];
+    var node = Utils.get_node_by_id(nodeId, allNodes);
+    switch (node) {
+      case null { output := [] };
+      case (?node) {
+
+        List.iterate<Types.Node>(
+          node.previousNodes,
+          func n {
+            output := [{
+              id = Nat.toText(n.nodeId);
+              title = n.title;
+              level = level;
+            }];
+            let childNodes = n.previousNodes;
+            switch (childNodes) {
+              case (null) {};
+              case (?nchildNodes) {
+                output := Array.append<Types.SimpleNode>(output, get_simple_node_tree(n.nodeId, level +300));
+              };
+            };
+          },
+        );
+      };
+    };
+    output;
+  };
   public query func get_all_edges(nodeId : Nat) : async ([Types.Edge]) {
     get_edges(nodeId);
+  };
+  public query func get_all_simple_node_tree(nodeId : Nat) : async ([Types.SimpleNode]) {
+    var node = Utils.get_node_by_id(nodeId, allNodes);
+    switch (node) {
+      case null { [] };
+      case (?node) {
+        Array.append<Types.SimpleNode>([{ id = Nat.toText(node.nodeId); title = node.title; level = 0 }], get_simple_node_tree(nodeId, 300));
+      };
+    };
   };
   public query func show_all_child_nodes(nodeId : Nat) : async Text {
     show_child_nodes(nodeId, "");

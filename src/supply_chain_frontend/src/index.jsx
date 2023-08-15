@@ -47,19 +47,8 @@ class SupplyChain extends React.Component {
         labelToText: [{ label: '', text: '' }],
         files: [{ url: '', canisterId: '' }]
       }],
-      edges: [{ id: '1-2', source: '1', target: '2' }] ,
-      tree: [
-        {
-          id: '1',
-          data: { label: 'Hello1' },
-          position: { x: 0, y: 0 },
-        },
-        {
-          id: '2',
-          data: { label: 'Hello' },
-          position: { x: 100, y: 100 },
-        },
-      ]
+      edges: [],
+      tree: []
     };
 
 
@@ -357,7 +346,7 @@ class SupplyChain extends React.Component {
       if (tValue.length > 0) {
         //Check if there are any child nodes. If not, the node is a "rootnode", which is a node without children
 
-        let response = await this.state.actor.create_draft_node(tValue);
+         response = await this.state.actor.create_draft_node(tValue);
         alert(response)
         this.getDraftBySupplier()
 
@@ -465,16 +454,30 @@ class SupplyChain extends React.Component {
     this.loadImage(currentDraft.draftFile, true);
 
   }
+  async calcLevel(lvl) {
+    return parseInt(lvl * 200);
+  }
+  //id: '1-2', source: '1', target: '2'
+  async getEdges(parentId) {
+    let tmpEdges = await this.state.actor.get_all_edges(parentId);
+    tmpEdges = tmpEdges.flat(Infinity);
+    const formattedEdges = tmpEdges.map((e) => ({
+      id: e.start + "-" + e.end,
+      source: e.start,
+      target: e.end
+    }));
+    this.setState({ edges: formattedEdges });
 
-async getEdges(){
-  let tmpEdges = await this.state.actor.get_all_edges(3);
-  tmpEdges=tmpEdges.flat(Infinity);
-  const formattedEdges= tmpEdges.map((e) => ({
-    s : e.start,
-    e : e.end
-  }));
-  console.log(formattedEdges);
-}
+    let tmpEtree = await this.state.actor.get_all_simple_node_tree(parentId);
+    tmpEtree = tmpEtree.flat(Infinity);
+    const formattedTree = tmpEtree.map((t) => ({
+      id: t.id,
+      data: { label: t.title },
+      position: { x: Number(t.level), y: 0 }
+      //position : { x: toString(parseInt(t.level)*100), y: 0 }
+    }));
+    this.setState({ tree: formattedTree });
+  }
 
   async getNodes() {
     let all = await this.state.actor.show_all_nodes_test();
@@ -583,16 +586,18 @@ async getEdges(){
 
   }
   async getChildNodes() {
+    //this.getEdges(tValue);
     let tree = document.getElementById("parentId");
     const tValue = parseInt(tree.value, 10);
     if (tValue >= 0) {
-      let nodes = await this.state.actor.show_all_child_nodes(tValue);
-      nodes = nodes.replace(/\n/g, '<br>');
-      console.log("Nodes:" + nodes)
-      if (nodes === "") { nodes = "No child nodes found" }
-      document.getElementById("treeResult").innerHTML = nodes;
+      // let nodes = await this.state.actor.show_all_child_nodes(tValue);
+      // nodes = nodes.replace(/\n/g, '<br>');
+      // console.log("Nodes:" + nodes)
+      // if (nodes === "") { nodes = "No child nodes found" }
+      // document.getElementById("treeResult").innerHTML = nodes;
+      this.getEdges(tValue);
     } else {
-      document.getElementById("treeResult").innerHTML = "Error: Invalid ID"
+      // document.getElementById("treeResult").innerHTML = "Error: Invalid ID"
     }
   }
 
@@ -849,28 +854,18 @@ async getEdges(){
 
   }
 
-
-  async getNodes() {
-    [
-      {
-        id: '1',
-        data: { label: 'Hello1' },
-        position: { x: 0, y: 0 },
-      },
-      {
-        id: '2',
-        data: { label: 'Hello' },
-        position: { x: 100, y: 100 },
-      },
-    ];
+   showTree() {
+    console.log(this.state.tree)
+    if (this.state.tree.length>0) {
+      return (<Flow nodes={this.state.tree} edges={this.state.edges} />);
+    }
   }
-
   render() {
     const { drafts } = this.state;
     return (
       <div className="App">
-         <button onClick={() => this.getEdges()}>Get all edges</button>
-        <div>  <Flow nodes={this.state.tree} edges={this.state.edges} /></div>
+        <button onClick={() => this.getEdges(3)}>Get all edges</button>
+        {this.showTree()}
 
 
         <div id="createCanister" style={{ display: "none" }} >

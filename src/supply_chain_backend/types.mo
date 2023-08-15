@@ -33,6 +33,11 @@ module {
         start : Text;
         end : Text;
     };
+     public type SimpleNode = {
+        id : Text;
+        title : Text;
+        level : Nat;
+    };
     public type CanisterSettings = {
         controllers : ?[Principal];
         compute_allocation : ?Nat;
