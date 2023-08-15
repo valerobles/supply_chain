@@ -84,7 +84,7 @@ actor Main {
   };
 
   //FOR TESTING
-  public shared func set_up_test_data() {
+  public shared func a_set_up_test_data() {
     let newNode1 = create_node(1, List.nil(), "One", { userId = "0"; userName = "test" }, { userId = "0"; userName = "test" }, [], []);
     allNodes := List.push<Types.Node>(newNode1, allNodes);
 
@@ -301,12 +301,13 @@ actor Main {
           node.previousNodes,
           func n {
             //output:= output# "{id:"#Nat.toText(nodeId)#"-"#Nat.toText(n.nodeId)#" }";
-            output := Array.append<Types.Edge>(output, [{ start = Nat.toText(nodeId); end = Nat.toText(n.nodeId) }]);
-            let childNodes = n.previousNodes;
+            output :=  [{ start = Nat.toText(nodeId); end = Nat.toText(n.nodeId) }];
+           Debug.print(Nat.toText(nodeId));
+           let childNodes = n.previousNodes;
             switch (childNodes) {
               case (null) {};
               case (?nchildNodes) {
-                output := get_edges(n.nodeId);
+                output := Array.append<Types.Edge>(output, get_edges(n.nodeId));
               };
             };
           },

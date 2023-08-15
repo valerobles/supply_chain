@@ -466,6 +466,16 @@ class SupplyChain extends React.Component {
 
   }
 
+async getEdges(){
+  let tmpEdges = await this.state.actor.get_all_edges(3);
+  tmpEdges=tmpEdges.flat(Infinity);
+  const formattedEdges= tmpEdges.map((e) => ({
+    s : e.start,
+    e : e.end
+  }));
+  console.log(formattedEdges);
+}
+
   async getNodes() {
     let all = await this.state.actor.show_all_nodes_test();
     console.log(all);
@@ -854,11 +864,12 @@ class SupplyChain extends React.Component {
       },
     ];
   }
-  async getEdges() { [{ id: '1-2', source: '1', target: '2' }] }
+
   render() {
     const { drafts } = this.state;
     return (
       <div className="App">
+         <button onClick={() => this.getEdges()}>Get all edges</button>
         <div>  <Flow nodes={this.state.tree} edges={this.state.edges} /></div>
 
 
