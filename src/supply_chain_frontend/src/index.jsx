@@ -473,7 +473,7 @@ class SupplyChain extends React.Component {
     const formattedTree = tmpEtree.map((t) => ({
       id: t.id,
       data: { label: t.title },
-      position: { x: Number(t.level), y: 0 }
+      position: { x: Number(t.levelX), y: Number(t.levelY) }
       //position : { x: toString(parseInt(t.level)*100), y: 0 }
     }));
     this.setState({ tree: formattedTree });
@@ -597,7 +597,7 @@ class SupplyChain extends React.Component {
       // document.getElementById("treeResult").innerHTML = nodes;
       this.getEdges(tValue);
     } else {
-      // document.getElementById("treeResult").innerHTML = "Error: Invalid ID"
+       document.getElementById("treeResult").innerHTML = "Error: Invalid ID"
     }
   }
 
@@ -792,12 +792,12 @@ class SupplyChain extends React.Component {
               <input
                 type="text"
                 value={field.label}
-                onChange={(event) => this.handleFieldChange(index, 'label', event)}
+                onChange={(event) => this.handleFieldChange(index, '', event)}
               />
               <input
                 type="text"
                 value={field.text}
-                onChange={(event) => this.handleFieldChange(index, 'text', event)}
+                onChange={(event) => this.handleFieldChange(index, '', event)}
               />
 
               {(
@@ -864,10 +864,8 @@ class SupplyChain extends React.Component {
     const { drafts } = this.state;
     return (
       <div className="App">
-        <button onClick={() => this.getEdges(3)}>Get all edges</button>
-        {this.showTree()}
-
-
+        {/* <button onClick={() => this.getEdges(3)}>Get all edges</button>
+ */}
         <div id="createCanister" style={{ display: "none" }} >
           <input id="image" alt="image" onChange={(e) => this.wasmHandler(e)} type="file" />
           <button onClick={() => this.installWasm()}>Install Wasm</button>
@@ -919,7 +917,7 @@ class SupplyChain extends React.Component {
               </tbody>
             </table>
             <button onClick={() => this.getChildNodes()}>Show Child Nodes</button>
-            <div id="treeResult"></div>
+            {this.showTree()}
           </div>
           <br></br>
 

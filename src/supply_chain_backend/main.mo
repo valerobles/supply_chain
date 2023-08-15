@@ -319,9 +319,10 @@ actor Main {
     output;
   };
   //recursively returns all edges from a tree
+  let yFactor=100;
   private func get_simple_node_tree(nodeId : Nat, level : Nat) : ([Types.SimpleNode]) {
-
-    var output = [{ id = ""; title = ""; level = 0 }];
+var levelY=0;
+    var output = [{ id = ""; title = ""; levelX = 0 ;levelY=0}];
     var node = Utils.get_node_by_id(nodeId, allNodes);
     switch (node) {
       case null { output := [] };
@@ -333,8 +334,10 @@ actor Main {
             output := [{
               id = Nat.toText(n.nodeId);
               title = n.title;
-              level = level;
+              levelX = level;
+              levelY=levelY;
             }];
+            levelY:=levelY+yFactor;
             let childNodes = n.previousNodes;
             switch (childNodes) {
               case (null) {};
@@ -356,7 +359,7 @@ actor Main {
     switch (node) {
       case null { [] };
       case (?node) {
-        Array.append<Types.SimpleNode>([{ id = Nat.toText(node.nodeId); title = node.title; level = 0 }], get_simple_node_tree(nodeId, 300));
+        Array.append<Types.SimpleNode>([{ id = Nat.toText(node.nodeId); title = node.title; levelX = 0 ;levelY=0}], get_simple_node_tree(nodeId, 300));
       };
     };
   };

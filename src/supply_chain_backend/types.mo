@@ -36,7 +36,8 @@ module {
      public type SimpleNode = {
         id : Text;
         title : Text;
-        level : Nat;
+        levelX : Nat;
+        levelY : Nat;
     };
     public type CanisterSettings = {
         controllers : ?[Principal];
