@@ -19,10 +19,11 @@ The Internet Computer (IC) is a decentralized network built using blockchain tec
 ## Technologies used
 - Javascript, ReactJS, CSS
 - Motoko
+- Node.js
 - DFX version 0.14.1
 
 ## Hardware requirements
-DFX requires a Unix based system: This project was developed and tested on macOS, both with the intel i7 processor and the M1 Chip.
+DFX natively only supports Unix based systems: This project was developed and tested on macOS, both with the intel i7 processor and the M1 Chip.
 Should also work on Linux.
 ## Running the project locally
 
@@ -32,7 +33,16 @@ If you want to run the project locally, you can use the following commands:
 # Starts the replica, running in the background
 dfx start --background
 
+# Download all of the dependencies
+npm install
+
 # Deploys your canisters to the replica and generates your candid interface
+dfx deploy
+
+# Update canister settings for canister creation
+dfx canister update-settings --add-controller be2us-64aaa-aaaaa-qaabq-cai assets_db
+
+# Deploy canister again with new settings
 dfx deploy
 ```
 
@@ -43,3 +53,20 @@ Additionally, if you are making frontend changes, you can start a development se
 npm start
 ```
 Which will start a server at `http://localhost:8080`, proxying API requests to the replica at port 4943.
+
+## After Deployment
+To allow canister creation you must upload the wasm module for the canister asset_db. 
+You do this over the UI after logging in. At the top left you will find a button for uploading the wasm file. Select it and then press "Install Wasm" 
+
+## Common Error
+If this error appears 
+
+```bash
+ERROR in ./src/supply_chain_frontend/src/index.jsx 30:20-59
+Module not found: Error: Can't resolve '../../declarations/assets_db' in
+```
+Use the following command and redeploy
+```bash
+# Generates canister dependencies for frontend
+dfx generate
+```
