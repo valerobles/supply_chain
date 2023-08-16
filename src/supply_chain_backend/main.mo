@@ -98,6 +98,10 @@ actor Main {
     let newNode3 = create_node(1002, childNodes2, "Three", { userId = "0"; userName = "test" }, { userId = "0"; userName = "test" }, [], []);
     allNodes := List.push<Types.Node>(newNode3, allNodes);
   };
+  //Returns ID of last created node
+  public shared func get_current_node_id() : async Nat {
+    nodeId;
+  };
   //Creates a New node with n child nodes. Child nodes are given as a list of IDs in previousnodes.
   //CurrentOwner needs to be the same as "nextOwner" in the given childNodes to point to them.
   //previousNodes: Array of all child nodes. If the first elementdfx is "0", the list is assumed to be empty.
@@ -193,6 +197,9 @@ actor Main {
     };
   };
 
+  public shared func getCurrentNodeId() : async Nat {
+    nodeId;
+  };
   // Creates a DraftNode object. It takes nodeId and the owner.
   // with the created DraftNode object, it is added to the supplierToDraftNodeID Hashmap
   // that maps the suppliers to their drafts
@@ -223,7 +230,7 @@ actor Main {
         };
         tempList := List.push<DraftNode.DraftNode>(node, tempList);
         supplierToDraftNodeID.put(ownerId, tempList);
-        return "Draft succesfully created";
+        return "Draft with id: " #Nat.toText(nodeId) # " succesfully created";
       };
     };
 
@@ -262,7 +269,6 @@ actor Main {
     };
 
   };
-
 
   //recursively returns all edges from a tree
   private func get_edges(nodeId : Nat) : ([Types.Edge]) {
@@ -353,7 +359,6 @@ actor Main {
       };
     };
   };
-
 
   // Adds a new Supplier with to suppliers map with key = internet identity value = username
   // Only suppliers can add new suppliers. Exception for the first supplier which can be added by anyone to prevent bootstrap problem.
