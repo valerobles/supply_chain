@@ -263,31 +263,6 @@ actor Main {
 
   };
 
-  //Recursive function to append all child nodes of a given Node by ID.
-  //Returns dependency structure as a text
-  private func show_child_nodes(nodeId : Nat, level : Text) : (Text) {
-    var output = "";
-    var node = Utils.get_node_by_id(nodeId, allNodes);
-    switch (node) {
-      case null { output := "Error: Node not found" };
-      case (?node) {
-        List.iterate<Types.Node>(
-          node.previousNodes,
-          func n {
-            output := output # "\n" #level # "ID: " #Nat.toText(n.nodeId) # " Title: " #n.title;
-            let childNodes = n.previousNodes;
-            switch (childNodes) {
-              case (null) {};
-              case (?nchildNodes) {
-                output := output #show_child_nodes(n.nodeId, level # "----");
-              };
-            };
-          },
-        );
-      };
-    };
-    output;
-  };
 
   //recursively returns all edges from a tree
   private func get_edges(nodeId : Nat) : ([Types.Edge]) {
@@ -325,7 +300,7 @@ actor Main {
     output;
   };
   //recursively returns all edges from a tree
-  let yFactor = 100;
+
   private func get_simple_node_tree(nodeId : Nat, level : Nat) : ([Types.SimpleNode]) {
     var levelY = 0;
     var output = [{ id = ""; title = ""; levelX = 0; levelY = 0 }];
@@ -348,12 +323,12 @@ actor Main {
             } else {
               output := Array.append<Types.SimpleNode>(output, appendix);
             };
-            levelY := levelY +yFactor;
+            levelY := levelY +1;
             let childNodes = n.previousNodes;
             switch (childNodes) {
               case (null) {};
               case (?nchildNodes) {
-                output := Array.append<Types.SimpleNode>(output, get_simple_node_tree(n.nodeId, level +300));
+                output := Array.append<Types.SimpleNode>(output, get_simple_node_tree(n.nodeId, level +1));
               };
             };
           },
@@ -374,13 +349,11 @@ actor Main {
     switch (node) {
       case null { [] };
       case (?node) {
-        Array.append<Types.SimpleNode>([{ id = Nat.toText(node.nodeId); title = node.title; levelX = 0; levelY = 0 }], get_simple_node_tree(nodeId, 300));
+        Array.append<Types.SimpleNode>([{ id = Nat.toText(node.nodeId); title = node.title; levelX = 0; levelY = 0 }], get_simple_node_tree(nodeId, 1));
       };
     };
   };
-  public query func show_all_child_nodes(nodeId : Nat) : async Text {
-    show_child_nodes(nodeId, "");
-  };
+
 
   // Adds a new Supplier with to suppliers map with key = internet identity value = username
   // Only suppliers can add new suppliers. Exception for the first supplier which can be added by anyone to prevent bootstrap problem.

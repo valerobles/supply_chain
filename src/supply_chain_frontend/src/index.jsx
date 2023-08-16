@@ -533,7 +533,7 @@ class SupplyChain extends React.Component {
     const formattedTree = tmpEtree.map((t) => ({
       id: t.id,
       data: { label: t.title },
-      position: { x: Number(t.levelX), y: Number(t.levelY) }
+      position: { x: Number(t.levelX)*300, y: Number(t.levelY)*100 }
     }));
     this.setState({ tree: formattedTree });
   }
