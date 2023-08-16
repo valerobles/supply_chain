@@ -56,7 +56,6 @@ class SupplyChain extends React.Component {
 
 
   async wasmHandler(event) {
-    // TODO check if uploaded file has .wasm extension
     this.state.wasm = event.target.files[0];
 
 
@@ -86,6 +85,8 @@ class SupplyChain extends React.Component {
     await Promise.all(promises);
 
     console.log("Wasm module upload done");
+    document.getElementById("createCanister").style.display = "none";
+
   };
 
   async uploadWasm(chunk) {
@@ -484,7 +485,7 @@ class SupplyChain extends React.Component {
           {this.state.allNodes.map((node, index) => (
             <div className="node-box" key={index}>
               <p>Title: {node.title}</p>
-              <p>Owner User Name: {node.owner.userName}</p>
+              <p>Owner username: {node.owner.userName}</p>
             </div>
           ))}
         </div>
@@ -717,7 +718,10 @@ class SupplyChain extends React.Component {
 
     if (tmpDraft.id != 0) {
       return (<div><h1>Complete "{tmpDraft.title}" Draft</h1>
-        <input value={tmpDraft.title} onChange={(event) => this.handleTitleChange(event)}></input>
+        <div>
+          <label>Title:</label>
+          <input value={tmpDraft.title} onChange={(event) => this.handleTitleChange(event)}></input>
+        </div>
         <table>
           <tbody>
             <tr>

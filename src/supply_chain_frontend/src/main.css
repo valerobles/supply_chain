@@ -41,9 +41,8 @@ button[type="submit"] {
   background-image: url("/src/supply_chain_frontend/assets/logo2.svg");
   background-size: cover;
   height: 100px;
-  /* Adjust the height as needed */
   padding: 100px;
-  
+
 }
 
 .inputs {
@@ -69,7 +68,7 @@ button[type="submit"] {
   border: 1px solid #ccc;
   padding: 10px;
   border-radius: 4px;
-  height: 300px;
+  height: 250px;
   width: 300px;
   background-color: #f9f9f9;
 }
