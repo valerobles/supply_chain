@@ -1,5 +1,6 @@
 # Supply Chain
 The Internet Computer (IC) is a decentralized network built using blockchain technology, launched in 2021 by the DFINITY Foundation1. Its primary purpose is to provide a platform capable of hosting fully decentralized applications (DApps) and services while also competing with the low cost and high speed of centralized cloud hosting. To analyse the strengths and weaknesses of the IC, this DApp of a Supply-Chain management tool was created.
+
 ## Developers
 
 - Valeria Robles Garzón
@@ -18,13 +19,14 @@ The Internet Computer (IC) is a decentralized network built using blockchain tec
 ## Technologies used
 - Javascript, ReactJS, CSS
 - Motoko
+- DFX version 0.14.1
 
-## Hardware needed
+## Hardware requirements
 DFX requires a Unix based system: This project was developed and tested on macOS, both with the intel i7 processor and the M1 Chip.
 Should also work on Linux.
 ## Running the project locally
 
-If you want to test your project locally, you can use the following commands:
+If you want to run the project locally, you can use the following commands:
 
 ```bash
 # Starts the replica, running in the background
