@@ -1,6 +1,5 @@
 body {
   font-family: sans-serif;
-  font-size: 1.5rem;
 }
 
 img {
@@ -39,9 +38,10 @@ button[type="submit"] {
 
 .hero {
   background-image: url("/src/supply_chain_frontend/assets/logo2.svg");
-  background-size: cover;
-  height: 100px;
-  padding: 100px;
+  background-size: 60%;
+  background-repeat: no-repeat;
+  padding: 80px;
+ 
 
 }
 
