@@ -84,19 +84,35 @@ actor Main {
   };
 
   //FOR TESTING
-  public shared func a_set_up_test_data() {
-    let newNode1 = create_node(1000, List.nil(), "One", { userId = "0"; userName = "test" }, { userId = "0"; userName = "test" }, [], []);
-    allNodes := List.push<Types.Node>(newNode1, allNodes);
+  public shared func a_set_up_test_data(id : Text, userName : Text) {
+    let farmer1 = create_node(1001, List.nil(), "Farmers", { userId = id; userName = userName }, { userId = id; userName = userName }, [], []);
+    let farmer2 = create_node(1002, List.nil(), "Farmer2", { userId = id; userName = userName }, { userId = id; userName = userName }, [], []);
+    let exporter = create_node(1003, List.nil(), "Exporter", { userId = id; userName = userName }, { userId = id; userName = userName }, [], []);
+    let cooperative = create_node(1004, List.nil(), "Cooperative", { userId = id; userName = userName }, { userId = id; userName = userName }, [], []);
+    let cooperative2 = create_node(1005, List.nil(), "Cooperative2", { userId = id; userName = userName }, { userId = id; userName = userName }, [], []);
+    allNodes := List.push<Types.Node>(farmer1, allNodes);
+    allNodes := List.push<Types.Node>(farmer2, allNodes);
+    allNodes := List.push<Types.Node>(exporter, allNodes);
+    allNodes := List.push<Types.Node>(cooperative, allNodes);
+    allNodes := List.push<Types.Node>(cooperative2, allNodes);
+    var courierChildren = List.nil<Types.Node>();
+    courierChildren := List.push<Types.Node>(farmer1, courierChildren);
+    courierChildren := List.push<Types.Node>(cooperative, courierChildren);
+    let courier = create_node(1006, courierChildren, "Courier Service", { userId = id; userName = userName }, { userId = id; userName = userName }, [], []);
+    allNodes := List.push<Types.Node>(courier, allNodes);
 
-    var childNodes1 = List.nil<Types.Node>();
-    childNodes1 := List.push<Types.Node>(newNode1, childNodes1);
-    let newNode2 = create_node(1001, childNodes1, "Two", { userId = "0"; userName = "test" }, { userId = "0"; userName = "test" }, [], []);
-    allNodes := List.push<Types.Node>(newNode2, allNodes);
+    var marketChildren = List.nil<Types.Node>();
+    marketChildren := List.push<Types.Node>(farmer2, marketChildren);
+    marketChildren := List.push<Types.Node>(exporter, marketChildren);
+    marketChildren := List.push<Types.Node>(cooperative2, marketChildren);
+    let marketplace = create_node(1007, marketChildren, "Marketplace", { userId = id; userName = userName }, { userId = id; userName = userName }, [], []);
+    allNodes := List.push<Types.Node>(marketplace, allNodes);
 
-    var childNodes2 = List.nil<Types.Node>();
-    childNodes2 := List.push<Types.Node>(newNode2, childNodes2);
-    let newNode3 = create_node(1002, childNodes2, "Three", { userId = "0"; userName = "test" }, { userId = "0"; userName = "test" }, [], []);
-    allNodes := List.push<Types.Node>(newNode3, allNodes);
+    var shopChildren = List.nil<Types.Node>();
+    shopChildren := List.push<Types.Node>(courier, shopChildren);
+    shopChildren := List.push<Types.Node>(marketplace, shopChildren);
+    let shop = create_node(1000, shopChildren, "Speciality Coffee Shop", { userId = id; userName = userName }, { userId = id; userName = userName }, [], []);
+    allNodes := List.push<Types.Node>(shop, allNodes);
   };
   //Returns ID of last created node
   public shared func get_current_node_id() : async Nat {
@@ -306,9 +322,9 @@ actor Main {
     output;
   };
   //recursively returns all edges from a tree
-
-  private func get_simple_node_tree(nodeId : Nat, level : Nat) : ([Types.SimpleNode]) {
-    var levelY = 0;
+var levelY=0;
+  private func get_simple_node_tree(nodeId : Nat, levelX : Nat) : ([Types.SimpleNode]) {
+   
     var output = [{ id = ""; title = ""; levelX = 0; levelY = 0 }];
     var node = Utils.get_node_by_id(nodeId, allNodes);
     switch (node) {
@@ -321,7 +337,7 @@ actor Main {
             let appendix = [{
               id = Nat.toText(n.nodeId);
               title = n.title;
-              levelX = level;
+              levelX = levelX;
               levelY = levelY;
             }];
             if (output[0].id == "") {
@@ -334,7 +350,7 @@ actor Main {
             switch (childNodes) {
               case (null) {};
               case (?nchildNodes) {
-                output := Array.append<Types.SimpleNode>(output, get_simple_node_tree(n.nodeId, level +1));
+                output := Array.append<Types.SimpleNode>(output, get_simple_node_tree(n.nodeId, levelX +1));
               };
             };
           },
