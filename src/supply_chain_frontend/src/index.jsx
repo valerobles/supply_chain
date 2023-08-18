@@ -20,7 +20,10 @@ class SupplyChain extends React.Component {
       file: null,
       wasm: null,
       agent: null,
-      assets_canisterid: "kwgtv-yiaaa-aaaak-ae5cq-cai",
+      //Live version 
+      // assets_canisterid: "kwgtv-yiaaa-aaaak-ae5cq-cai",
+      //Local version
+      assets_canisterid: "bkyz2-fmaaa-aaaaa-qaaaq-cai",
       drafts: [{ id: '', title: '' }],
       currentDraft: {
         id: 0,
@@ -159,7 +162,7 @@ class SupplyChain extends React.Component {
   handleChildNodesChange = (event) => {
     const newChildNodesS = event.target.value;
     let newChildNodes = newChildNodesS.split(',').map(function (item) {
-      return parseInt(item, 10);
+      return item;
     });
     this.setState({
       currentDraft: {
@@ -263,7 +266,7 @@ class SupplyChain extends React.Component {
 
     const { currentDraft } = this.state;
 
-
+  
     // Construct Arguments to send to backend canister
     const currentD = [
       BigInt(currentDraft.id),
@@ -450,7 +453,8 @@ class SupplyChain extends React.Component {
   async getNodes() {
     let all = await this.state.actor.show_all_nodes_test();
     all = all.flat(Infinity);
-    if (all.size() > 0) {
+    console.log(all)
+    if (all.length > 0) {
       const formattedNodes = all.map((node) => ({
         id: Number(node.nodeId),
         title: node.title || "",
@@ -477,7 +481,7 @@ class SupplyChain extends React.Component {
 
       this.setState({ allNodes: formattedNodes });
       this.showNodes()
-    }else{
+    } else {
       alert("No nodes found");
     }
   }
@@ -730,7 +734,7 @@ class SupplyChain extends React.Component {
           <tbody>
             <tr>
               <td>Next Owner ID:</td><td><input value={tmpDraft.nextOwner.userId} onChange={(event) => this.handleNextOwnerChange(event)}></input></td>
-              <td>Child nodes:</td><td><input value={tmpDraft.previousNodesIDs} onChange={(event) => this.handleChildNodesChange(event)}></input></td>
+              <td>Child nodes:</td><td><input type="text" value={tmpDraft.previousNodesIDs} onChange={(event) => this.handleChildNodesChange(event)}></input></td>
             </tr>
           </tbody>
         </table>

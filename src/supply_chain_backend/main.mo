@@ -29,7 +29,11 @@ actor Main {
   // list of all asset canister ids
   stable var assetCanisterIds = List.nil<Principal>();
   // adding current asset canister id to list
-  assetCanisterIds := List.push<Principal>(Principal.fromText("kwgtv-yiaaa-aaaak-ae5cq-cai"), assetCanisterIds);
+  //Live version
+  //assetCanisterIds := List.push<Principal>(Principal.fromText("kwgtv-yiaaa-aaaak-ae5cq-cai"), assetCanisterIds);
+  //Local Version
+   assetCanisterIds := List.push<Principal>(Principal.fromText("bkyz2-fmaaa-aaaaa-qaaaq-cai"), assetCanisterIds);
+
 
   //Learning: Cant return non-shared classes (aka mutable classes). Save mutable data to this actor instead of node?
   var allNodes = List.nil<Types.Node>(); // make stable
@@ -83,38 +87,6 @@ actor Main {
 
   };
 
-  //FOR TESTING
-  public shared func a_set_up_test_data(id : Text, userName : Text) {
-    let farmer1 = create_node(1, List.nil(), "Farmer", { userId = id; userName = userName }, { userId = id; userName = userName }, [], []);
-    let farmer2 = create_node(2, List.nil(), "Farmer", { userId = id; userName = userName }, { userId = id; userName = userName }, [], []);
-    let exporter = create_node(5, List.nil(), "Exporter", { userId = id; userName = userName }, { userId = id; userName = userName }, [], []);
-    let cooperative = create_node(3, List.nil(), "Cooperative", { userId = id; userName = userName }, { userId = id; userName = userName }, [], []);
-    let cooperative2 = create_node(4, List.nil(), "Cooperative", { userId = id; userName = userName }, { userId = id; userName = userName }, [], []);
-    allNodes := List.push<Types.Node>(farmer1, allNodes);
-    allNodes := List.push<Types.Node>(farmer2, allNodes);
-    allNodes := List.push<Types.Node>(exporter, allNodes);
-    allNodes := List.push<Types.Node>(cooperative, allNodes);
-    allNodes := List.push<Types.Node>(cooperative2, allNodes);
-    var courierChildren = List.nil<Types.Node>();
-    courierChildren := List.push<Types.Node>(farmer1, courierChildren);
-    courierChildren := List.push<Types.Node>(cooperative, courierChildren);
-    let courier = create_node(6, courierChildren, "Courier Service", { userId = id; userName = userName }, { userId = id; userName = userName }, [], []);
-    allNodes := List.push<Types.Node>(courier, allNodes);
-
-    var marketChildren = List.nil<Types.Node>();
-    marketChildren := List.push<Types.Node>(farmer2, marketChildren);
-    marketChildren := List.push<Types.Node>(exporter, marketChildren);
-    marketChildren := List.push<Types.Node>(cooperative2, marketChildren);
-    let marketplace = create_node(7, marketChildren, "Marketplace", { userId = id; userName = userName }, { userId = id; userName = userName }, [], []);
-    allNodes := List.push<Types.Node>(marketplace, allNodes);
-
-    var shopChildren = List.nil<Types.Node>();
-    shopChildren := List.push<Types.Node>(courier, shopChildren);
-    shopChildren := List.push<Types.Node>(marketplace, shopChildren);
-    let shop = create_node(8, shopChildren, "Speciality Coffee Shop", { userId = id; userName = userName }, { userId = id; userName = userName }, [], []);
-    allNodes := List.push<Types.Node>(shop, allNodes);
- 
-  };
   //Returns ID of last created node
   public shared func get_current_node_id() : async Nat {
     nodeId;
@@ -323,9 +295,9 @@ actor Main {
     output;
   };
   //recursively returns all edges from a tree
-var levelY=0;
+  var levelY = 0;
   private func get_simple_node_tree(nodeId : Nat, levelX : Nat) : ([Types.SimpleNode]) {
-   
+
     var output = [{ id = ""; title = ""; levelX = 0; levelY = 0 }];
     var node = Utils.get_node_by_id(nodeId, allNodes);
     switch (node) {
@@ -426,7 +398,7 @@ var levelY=0;
   // returns boolean if given file has enough space in the current asset canister
   private func has_enough_memory(fileSize : Nat) : async Bool {
 
-    return ((fileSize * 2) + (await get_used_memory())) < 4_186_000_000; // (ca. 3.9 GB)
+    return (fileSize + (await get_used_memory())) < 4_186_000_000; // (ca. 3.9 GB)
   };
 
   // Makes a call to Management Canister and returns the current memory used
@@ -461,7 +433,7 @@ var levelY=0;
       freezing_threshold = null;
     };
 
-    Cycles.add(Cycles.balance() / 2); // TODO set fixed amount of cycles
+    Cycles.add(1000_000_000_000); // TODO set fixed amount of cycles
     let cid = await IC.create_canister({ settings = settings_ });
     assetCanisterIds := List.push<Principal>(cid.canister_id, assetCanisterIds);
     let status = await IC.canister_status(cid);
@@ -548,5 +520,43 @@ var levelY=0;
   public query (message) func get_caller() : async Text {
     return Principal.toText(message.caller);
   };
+  // Create supply-chain for user calling it, returns last ID of node
+  public shared func a_set_up_test_data(id : Text, userName : Text) : async (Nat) {
+    nodeId := nodeId +1;
+    let farmer1 = create_node(nodeId, List.nil(), "Farmer", { userId = id; userName = userName }, { userId = id; userName = userName }, [], []);
+    nodeId := nodeId +1;
+    let farmer2 = create_node(nodeId, List.nil(), "Farmer", { userId = id; userName = userName }, { userId = id; userName = userName }, [], []);
+    nodeId := nodeId +1;
+    let exporter = create_node(nodeId, List.nil(), "Exporter", { userId = id; userName = userName }, { userId = id; userName = userName }, [], []);
+    nodeId := nodeId +1;
+    let cooperative = create_node(nodeId, List.nil(), "Cooperative", { userId = id; userName = userName }, { userId = id; userName = userName }, [], []);
+    nodeId := nodeId +1;
+    let cooperative2 = create_node(nodeId, List.nil(), "Cooperative", { userId = id; userName = userName }, { userId = id; userName = userName }, [], []);
+    allNodes := List.push<Types.Node>(farmer1, allNodes);
+    allNodes := List.push<Types.Node>(farmer2, allNodes);
+    allNodes := List.push<Types.Node>(exporter, allNodes);
+    allNodes := List.push<Types.Node>(cooperative, allNodes);
+    allNodes := List.push<Types.Node>(cooperative2, allNodes);
+    var courierChildren = List.nil<Types.Node>();
+    courierChildren := List.push<Types.Node>(farmer1, courierChildren);
+    courierChildren := List.push<Types.Node>(cooperative, courierChildren);
+    let courier = create_node(nodeId, courierChildren, "Courier Service", { userId = id; userName = userName }, { userId = id; userName = userName }, [], []);
+    nodeId := nodeId +1;
+    allNodes := List.push<Types.Node>(courier, allNodes);
 
+    var marketChildren = List.nil<Types.Node>();
+    marketChildren := List.push<Types.Node>(farmer2, marketChildren);
+    marketChildren := List.push<Types.Node>(exporter, marketChildren);
+    marketChildren := List.push<Types.Node>(cooperative2, marketChildren);
+    let marketplace = create_node(nodeId, marketChildren, "Marketplace", { userId = id; userName = userName }, { userId = id; userName = userName }, [], []);
+    nodeId := nodeId +1;
+    allNodes := List.push<Types.Node>(marketplace, allNodes);
+
+    var shopChildren = List.nil<Types.Node>();
+    shopChildren := List.push<Types.Node>(courier, shopChildren);
+    shopChildren := List.push<Types.Node>(marketplace, shopChildren);
+    let shop = create_node(nodeId, shopChildren, "Speciality Coffee Shop", { userId = id; userName = userName }, { userId = id; userName = userName }, [], []);
+    allNodes := List.push<Types.Node>(shop, allNodes);
+    return nodeId;
+  };
 };
