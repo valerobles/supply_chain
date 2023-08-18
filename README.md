@@ -54,6 +54,10 @@ npm start
 ```
 Which will start a server at `http://localhost:8080`, proxying API requests to the replica at port 4943.
 
+You can stop the environment by running
+```bash
+dfx stop
+```
 ## After Deployment
 To allow canister creation you must upload the wasm module for the canister asset_db. 
 You do this over the UI after logging in. At the top left you will find a button for uploading the wasm file. Select it and then press "Install Wasm" 
