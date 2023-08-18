@@ -24,7 +24,7 @@ actor Main {
   let IC : Types.Management = actor ("aaaaa-aa");
 
   // variable saving wasm module that is needed for canister creation
-  private stable var assetCanisterWasm : [Nat8] = [];
+  private  var assetCanisterWasm : [Nat8] = [];
 
   // list of all asset canister ids
   stable var assetCanisterIds = List.nil<Principal>();
@@ -32,8 +32,7 @@ actor Main {
   //Live version
   //assetCanisterIds := List.push<Principal>(Principal.fromText("kwgtv-yiaaa-aaaak-ae5cq-cai"), assetCanisterIds);
   //Local Version
-   assetCanisterIds := List.push<Principal>(Principal.fromText("bkyz2-fmaaa-aaaaa-qaaaq-cai"), assetCanisterIds);
-
+  assetCanisterIds := List.push<Principal>(Principal.fromText("bkyz2-fmaaa-aaaaa-qaaaq-cai"), assetCanisterIds);
 
   //Learning: Cant return non-shared classes (aka mutable classes). Save mutable data to this actor instead of node?
   var allNodes = List.nil<Types.Node>(); // make stable
@@ -61,6 +60,10 @@ actor Main {
       };
     };
 
+  };
+
+  public query func wasm_is_empty() : async (Bool) {
+    return  assetCanisterWasm == [];
   };
 
   public query func check_node_exists(id : Nat) : async (Bool) {

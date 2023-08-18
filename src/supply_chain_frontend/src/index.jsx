@@ -21,7 +21,7 @@ class SupplyChain extends React.Component {
       wasm: null,
       agent: null,
       //Live version 
-      // assets_canisterid: "kwgtv-yiaaa-aaaak-ae5cq-cai",
+       //assets_canisterid: "kwgtv-yiaaa-aaaak-ae5cq-cai",
       //Local version
       assets_canisterid: "bkyz2-fmaaa-aaaaa-qaaaq-cai",
       drafts: [{ id: '', title: '' }],
@@ -406,9 +406,10 @@ class SupplyChain extends React.Component {
     });
 
 
-
+    const wasmIsEmpty= await this.state.actor.wasm_is_empty();
+    if(wasmIsEmpty){
     document.getElementById("createCanister").style.display = "block";
-
+    }
 
     const greeting = await this.state.actor.greet();
     document.getElementById("greeting").innerText = greeting;
