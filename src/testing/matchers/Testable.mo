@@ -49,7 +49,6 @@ module {
     };
 
     public let textTestable : Testable<Text> = {
-        // TODO Actually escape the text here
         display = func(text : Text) : Text { "\"" # text # "\"" };
         equals = func(t1 : Text, t2 : Text) : Bool { t1 == t2 };
     };

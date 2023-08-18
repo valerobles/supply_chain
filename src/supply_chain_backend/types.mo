@@ -4,7 +4,7 @@ module {
     //A supplier is an entity that has to be registered in the App. One must be
     public type Supplier = {
         userName : Text;
-        userId : Text; // TODO: change to type Principal?
+        userId : Text; 
     };
     public type Node = {
 

@@ -43,7 +43,6 @@ module {
     func displayFailure(failure : Failure) : Text = "\n" # joinWith(failure.names, "/") # " failed:\n" # failure.error.toText();
 
     /// A collection of tests to be run together
-    // TODO: Maybe this should be a Forest rather than a Tree?
     public type Suite = {
         #node : { name : Text; children : [Suite] };
         #test : { name : Text; test : () -> ?Matchers.Description };

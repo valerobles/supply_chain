@@ -52,14 +52,12 @@ module {
     };
 
     /// Turns a `Matcher` for `A`s into a `Matcher` for `B`s by using `f` as an adapter.
-    // TODO Maybe call this adapt?
     public func contramap<A, B>(matcher : Matcher<A>, f : B -> A) : Matcher<B> = {
         matches = func(item : B) : Bool = matcher.matches(f(item));
         describeMismatch = func(item : B, description : Description) = matcher.describeMismatch(f(item), description);
     };
 
     /// `Matcher`s describe match failures by inserting them into a `Description`.
-    // TODO More complicated descriptions? Maybe a bit more structure than raw text?
     public class Description() {
         var message : Text = "";
 

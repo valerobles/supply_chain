@@ -273,8 +273,6 @@ actor Main {
         List.iterate<Types.Node>(
           node.previousNodes,
           func n {
-            //output:= output# "{id:"#Nat.toText(nodeId)#"-"#Nat.toText(n.nodeId)#" }";
-
             let appendix = [{
               start = Nat.toText(n.nodeId);
               end = Nat.toText(nodeId);
@@ -297,8 +295,9 @@ actor Main {
     };
     output;
   };
-  //recursively returns all edges from a tree
+  //Used to keep track of position of node on Y axis
   var levelY = 0;
+  //recursively returns all edges from a tree
   private func get_simple_node_tree(nodeId : Nat, levelX : Nat) : ([Types.SimpleNode]) {
 
     var output = [{ id = ""; title = ""; levelX = 0; levelY = 0 }];
@@ -406,8 +405,7 @@ actor Main {
 
   // Makes a call to Management Canister and returns the current memory used
   // for the current asset canister
-  // TODO change to private after checking storage increase
-  public func get_used_memory() : async Nat {
+  private func get_used_memory() : async Nat {
 
     let currentAssetCanister = List.get<Principal>(assetCanisterIds, 0); // get newest asset canister id
 
@@ -436,7 +434,7 @@ actor Main {
       freezing_threshold = null;
     };
 
-    Cycles.add(1000_000_000_000); // TODO set fixed amount of cycles
+    Cycles.add(1000_000_000_000); 
     let cid = await IC.create_canister({ settings = settings_ });
     assetCanisterIds := List.push<Principal>(cid.canister_id, assetCanisterIds);
     let status = await IC.canister_status(cid);
@@ -523,7 +521,7 @@ actor Main {
   public query (message) func get_caller() : async Text {
     return Principal.toText(message.caller);
   };
-  // Create supply-chain for user calling it, returns last ID of node
+  // Create supply-chain for user data put in, returns last ID of node
   public shared func a_set_up_test_data(id : Text, userName : Text) : async (Nat) {
     nodeId := nodeId +1;
     let farmer1 = create_node(nodeId, List.nil(), "Farmer", { userId = id; userName = userName }, { userId = id; userName = userName }, [], []);

@@ -9,6 +9,7 @@ import DraftNode "draftNode";
 
 module Utils {
   public func get_node_by_id(id : Nat, allNodes : List.List<Types.Node>) : (?Types.Node) {
+
     List.find<Types.Node>(allNodes, func n { n.nodeId == id });
   };
 

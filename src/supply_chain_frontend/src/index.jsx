@@ -71,14 +71,13 @@ class SupplyChain extends React.Component {
   async installWasm() {
     const promises = [];
 
-    console.log("Upload start of wasm module");
 
     const chunkSize_ = 700000;
 
 
     for (let start = 0; start < this.state.wasm.size; start += chunkSize_) {
       const chunk = this.state.wasm.slice(start, start + chunkSize_);
-      console.log(chunk);
+
 
       promises.push(this.uploadWasm(
         chunk
@@ -87,7 +86,7 @@ class SupplyChain extends React.Component {
 
     await Promise.all(promises);
 
-    console.log("Wasm module upload done");
+
     document.getElementById("createCanister").style.display = "none";
 
   };
@@ -454,7 +453,7 @@ class SupplyChain extends React.Component {
   async getNodes() {
     let all = await this.state.actor.show_all_nodes_test();
     all = all.flat(Infinity);
-    console.log(all)
+
     if (all.length > 0) {
       const formattedNodes = all.map((node) => ({
         id: Number(node.nodeId),
@@ -612,10 +611,6 @@ class SupplyChain extends React.Component {
     let newName = this.state.file.name.replace(/\s/g, ""); // remove whitespaces so no error occurs in the GET method URL
     this.state.file = new File([this.state.file], newName, { type: this.state.file.type });
 
-
-
-    console.log('start upload');
-
     const batch_name = this.state.file.name;
     const promises = [];
     const chunkSize = 1500000; //Messages to canisters cannot be larger than 2MB. The chunks are of size 1.5MB
@@ -624,7 +619,6 @@ class SupplyChain extends React.Component {
 
       // Create a chunk from file in size defined in chunkSize
       const chunk = this.state.file.slice(start, start + chunkSize); // returns a Blob obj
-      console.log(chunk);
 
       // Fill array with the uploadChunkt function. The array be executed later
       // "uploadChunk" takees the batch_name(file name) and the chunk
@@ -637,8 +631,6 @@ class SupplyChain extends React.Component {
     // Executes the "uploadChunk" defined in the promises array. Returns the chunkIDs created in the backend
     const chunkIds = await Promise.all(promises);
 
-    console.log(chunkIds);
-
     const node_id = BigInt(currentDraft.id)
 
     //Finish upload by commiting file batch to be saved in backend canister with the current node ID
@@ -648,8 +640,6 @@ class SupplyChain extends React.Component {
       chunk_ids: chunkIds.map(({ chunk_id }) => chunk_id),
       content_type: this.state.file.type
     })
-
-    console.log('uploaded');
 
     const assetKey = [
       ...currentDraft.draftFile,
