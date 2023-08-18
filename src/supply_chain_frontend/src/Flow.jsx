@@ -5,7 +5,7 @@ import 'reactflow/dist/style.css';
 function Flow({nodes, edges}) {
 
   return (
-    <div style={{ height: '300px' }}>
+    <div style={{ height: '400px' }}>
       <ReactFlow nodes={nodes} edges={edges}>
         <Background />
         <Controls />

@@ -20,7 +20,7 @@ class SupplyChain extends React.Component {
       file: null,
       wasm: null,
       agent: null,
-      assets_canisterid: "bkyz2-fmaaa-aaaaa-qaaaq-cai",
+      assets_canisterid: "kwgtv-yiaaa-aaaak-ae5cq-cai",
       drafts: [{ id: '', title: '' }],
       currentDraft: {
         id: 0,
@@ -358,7 +358,7 @@ class SupplyChain extends React.Component {
 
   async getDraftBySupplier() {
     let isSupplier = await this.state.actor.is_supplier_logged_in();
-    
+
     let myElement = document.getElementById("draftsList");
     if (isSupplier) {
 
@@ -371,7 +371,7 @@ class SupplyChain extends React.Component {
 
       });
       this.setState({ drafts: tempDrafts });
-  
+
     } else {
       myElement.style.display = "none";
     }
@@ -449,33 +449,37 @@ class SupplyChain extends React.Component {
 
   async getNodes() {
     let all = await this.state.actor.show_all_nodes_test();
-    all = all.flat(Infinity)
-    const formattedNodes = all.map((node) => ({
-      id: Number(node.nodeId),
-      title: node.title || "",
-      owner: {
-        userName: node.owner?.userName || "",
-        userId: node.owner?.userId || "",
-      },
-      nextOwner: {
-        userName: node.nextOwner?.userName || "",
-        userId: node.nextOwner?.userId || "",
-      },
-      childNodes: (node.previousNodes || []).map((userId) => ({
-        userId
-      })),
-      labelToText: (node.texts || []).map(([label, text]) => ({
-        label,
-        text
-      })),
-      files: (node.assetKey || []).map(([url, canisterId]) => ({
-        url,
-        canisterId
-      })),
-    }));
+    all = all.flat(Infinity);
+    if (all.size() > 0) {
+      const formattedNodes = all.map((node) => ({
+        id: Number(node.nodeId),
+        title: node.title || "",
+        owner: {
+          userName: node.owner?.userName || "",
+          userId: node.owner?.userId || "",
+        },
+        nextOwner: {
+          userName: node.nextOwner?.userName || "",
+          userId: node.nextOwner?.userId || "",
+        },
+        childNodes: (node.previousNodes || []).map((userId) => ({
+          userId
+        })),
+        labelToText: (node.texts || []).map(([label, text]) => ({
+          label,
+          text
+        })),
+        files: (node.assetKey || []).map(([url, canisterId]) => ({
+          url,
+          canisterId
+        })),
+      }));
 
-    this.setState({ allNodes: formattedNodes });
-    this.showNodes()
+      this.setState({ allNodes: formattedNodes });
+      this.showNodes()
+    }else{
+      alert("No nodes found");
+    }
   }
 
   showNodes() {
@@ -533,8 +537,8 @@ class SupplyChain extends React.Component {
     tmpEtree = tmpEtree.flat(Infinity);
     const formattedTree = tmpEtree.map((t) => ({
       id: t.id,
-      data: { label: t.title },
-      position: { x: Number(t.levelX)*300, y: Number(t.levelY)*100 }
+      data: { label: "#" + t.id + " " + t.title },
+      position: { x: Number(t.levelX) * 300, y: Number(t.levelY) * 50 }
     }));
     this.setState({ tree: formattedTree });
   }

@@ -1,0 +1,14 @@
+{
+  "assets_db": {
+    "ic": "kwgtv-yiaaa-aaaak-ae5cq-cai"
+  },
+  "supply_chain_backend": {
+    "ic": "krhvb-vqaaa-aaaak-ae5ca-cai"
+  },
+  "supply_chain_frontend": {
+    "ic": "k7fyj-oaaaa-aaaak-ae5da-cai"
+  },
+  "testing": {
+    "ic": "kye65-dyaaa-aaaak-ae5dq-cai"
+  }
+}
