@@ -161,7 +161,7 @@ class SupplyChain extends React.Component {
   handleChildNodesChange = (event) => {
     const newChildNodesS = event.target.value;
     let newChildNodes = newChildNodesS.split(',').map(function (item) {
-      return item;
+      return parseInt(item,10);
     });
     this.setState({
       currentDraft: {
