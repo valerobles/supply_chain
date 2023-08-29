@@ -21,7 +21,7 @@ class SupplyChain extends React.Component {
       wasm: null,
       agent: null,
       //Live version 
-       //assets_canisterid: "kwgtv-yiaaa-aaaak-ae5cq-cai",
+      //assets_canisterid: "kwgtv-yiaaa-aaaak-ae5cq-cai",
       //Local version
       assets_canisterid: "bkyz2-fmaaa-aaaaa-qaaaq-cai",
       drafts: [{ id: '', title: '' }],
@@ -161,7 +161,7 @@ class SupplyChain extends React.Component {
   handleChildNodesChange = (event) => {
     const newChildNodesS = event.target.value;
     let newChildNodes = newChildNodesS.split(',').map(function (item) {
-      return parseInt(item,10);
+      return parseInt(item, 10);
     });
     this.setState({
       currentDraft: {
@@ -265,7 +265,7 @@ class SupplyChain extends React.Component {
 
     const { currentDraft } = this.state;
 
-  
+
     // Construct Arguments to send to backend canister
     const currentD = [
       BigInt(currentDraft.id),
@@ -405,9 +405,9 @@ class SupplyChain extends React.Component {
     });
 
 
-    const wasmIsEmpty= await this.state.actor.wasm_is_empty();
-    if(wasmIsEmpty){
-    document.getElementById("createCanister").style.display = "block";
+    const wasmIsEmpty = await this.state.actor.wasm_is_empty();
+    if (wasmIsEmpty) {
+      document.getElementById("createCanister").style.display = "block";
     }
 
     const greeting = await this.state.actor.greet();
@@ -736,12 +736,12 @@ class SupplyChain extends React.Component {
               <input
                 type="text"
                 value={field.label}
-                onChange={(event) => this.handleFieldChange(index, '', event)}
+                onChange={(event) => this.handleFieldChange(index, 'label', event)}
               />
               <input
                 type="text"
                 value={field.text}
-                onChange={(event) => this.handleFieldChange(index, '', event)}
+                onChange={(event) => this.handleFieldChange(index, 'text', event)}
               />
 
               {(
