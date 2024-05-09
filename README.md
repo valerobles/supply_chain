@@ -3,8 +3,8 @@ The Internet Computer (IC) is a decentralized network built using blockchain tec
 
 ## Developers
 
-- Valeria Robles Garzón
-- Luca Lunati
+- Valeria
+- Luca
 
 ## Key UI features
 
